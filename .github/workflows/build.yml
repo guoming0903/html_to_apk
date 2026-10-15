@@ -11,10 +11,10 @@ jobs:
       - name: 設定 Node.js 環境
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: 設定 Java (JDK 17) 環境
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -22,7 +22,6 @@ jobs:
       - name: 安裝相依套件並同步 Capacitor
         run: |
           npm install
-          npx cap add android || true
           npx cap sync android
 
       - name: 編譯 Android Debug APK
