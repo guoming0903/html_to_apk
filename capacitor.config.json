@@ -1,0 +1,6 @@
+{
+  "appId": "com.duty.alarm.app",
+  "appName": "值班智慧鬧鐘",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
