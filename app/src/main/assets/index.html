@@ -1,349 +1,1635 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="zh-TW">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HTML → APK</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>月曆與值班工時統計 (APK 原生鬧鐘版)</title>
 <style>
-:root{--bg:#20263a;--panel:#2b3450;--line:#3e4a6e;--txt:#e8ecf6;--mut:#9aa6c6;--acc:#b3bcff;--ok:#8fe0b5}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 ui-rounded,"Trebuchet MS",system-ui,sans-serif;padding:20px 16px 48px}
-main{max-width:560px;margin:0 auto}
-h1{font-size:28px;margin:8px 0 4px;letter-spacing:-.5px}
-p.sub{color:var(--mut);margin:0 0 22px}
-label{display:block;font-size:14px;color:var(--mut);margin:16px 0 6px}
-input[type=text],select,textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px 12px;font:inherit}
-textarea{min-height:130px;font:13px/1.4 ui-monospace,Menlo,monospace;resize:vertical}
-input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-.row{display:flex;gap:12px}.row>*{flex:1}
-.chk{display:flex;align-items:center;gap:10px;margin-top:16px;color:var(--txt);font-size:16px}
-.chk input{width:20px;height:20px;accent-color:var(--acc)}
-input[type=file]{width:100%;color:var(--mut);font-size:14px}
-button{margin-top:26px;width:100%;background:var(--acc);color:#1a2040;border:0;border-radius:12px;padding:14px;font:600 17px inherit;cursor:pointer}
-#msg{margin-top:22px;background:var(--panel);border-left:4px solid var(--ok);border-radius:8px;padding:14px 16px;display:none;font-size:15px}
-#msg.err{border-color:#ff8c8c}
-#msg ol{padding-left:20px;margin:8px 0 0}
+  :root {
+    --primary-color: #2563eb;       
+    --primary-hover: #3b82f6;       
+    --bg-color: #ffffff;          
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #cbd5e1;       
+    --accent-holiday: #ef4444;     
+    --accent-saturday: #10b981;
+    --today-bg: #3b82f6;           
+    --cal-bg: #f1f5f9;              
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    text-align: center; 
+    background-color: var(--bg-color); 
+    padding: 0; 
+    margin: 0;
+    color: var(--text-main);
+    overflow-x: hidden;
+  }
+
+  .calendar-container { 
+    display: block;
+    width: 100%;
+    padding: 12px 12px 80px 12px;
+    border-radius: 0;
+    box-shadow: none;
+    position: relative; 
+    background: var(--card-bg);
+  }
+
+  .tab-pane { display: none !important; }
+  .tab-pane.active { display: block !important; }
+
+  .work-hours-panel { 
+    background: transparent; 
+    border: none; 
+    padding-top: 10px; 
+    width: 100%;
+    margin-top: 0;              
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    touch-action: pan-y;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-size: 11.5pt;               
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 3px;
+    line-height: 1.4;
+  }
+
+  .panel-subtitle {
+    font-size: 9.5pt;               
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  .stats-swipe-wrapper {
+    width: 100%;
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+    will-change: transform, opacity;
+    touch-action: pan-y;
+  }
+
+  .work-hours-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: none;
+  }
+
+  .work-hours-table th, .work-hours-table td { 
+    border: 1px solid var(--border-color);
+    padding: 6px 2px;              
+    text-align: center; 
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .work-hours-table th { 
+    background-color: #e2e8f0; 
+    color: var(--primary-color); 
+    font-size: 9.5pt;               
+    font-weight: 700;
+    height: 45px;                  
+  }
+
+  .work-hours-table tbody th {
+    background-color: #f1f5f9;
+    color: var(--primary-color);
+    font-size: 9.5pt;               
+    font-weight: 700;
+    height: auto;
+  }
+
+  .work-hours-table td {
+    font-size: 9.5pt;               
+    font-weight: 600;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .work-hours-table tr.selected-row {
+    background-color: #dbeafe !important;
+  }
+
+  .work-hours-table tr.selected-row tbody th,
+  .work-hours-table tr.selected-row th {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+  }
+
+  .work-hours-table tr.selected-row td {
+    color: #1e3a8a !important;
+    font-weight: 800 !important;
+  }
+
+  .main-panel { 
+    width: 100%;                  
+  }
+
+  .cal-header {
+    background: transparent;
+    color: var(--text-main);
+    padding: 0 0 12px 0;
+    margin-bottom: 8px;
+  }
+
+  .header-controls { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 8px; 
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .header-controls select, .alarm-form-row select { 
+    font-size: 9pt; 
+    padding: 3px 6px; 
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: #ffffff;
+    color: var(--text-main);
+    outline: none;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .roc-text { 
+    font-size: 12pt; 
+    font-weight: 700; 
+    color: var(--text-main); 
+    white-space: nowrap; 
+    letter-spacing: 1px;
+  }
+
+  button { 
+    font-size: 9pt; 
+    padding: 3px 8px; 
+    cursor: pointer; 
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background: #e2e8f0;
+  }
+
+  .shift-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .shift-btn-group button {
+    padding: 4px 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+  }
+
+  .shift-btn-group button.active {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+  }
+
+  .cal-swipe-wrapper {
+    overflow: hidden;
+    width: 100%;
+    touch-action: pan-y;
+  }
+
+  table.cal-table { 
+    border-collapse: collapse; 
+    background-color: var(--cal-bg);
+    width: 100%; 
+    table-layout: fixed; 
+    border-radius: 14px;
+    overflow: hidden;
+    border: none;
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+    will-change: transform, opacity;
+  }
+
+  .week-header th { 
+    background-color: #e2e8f0; 
+    width: auto; 
+    padding: 8px 0; 
+    font-weight: 700; 
+    font-size: 11pt;
+    border: none;
+    height: 36px;
+  }
+
+  .dayCell { 
+    width: auto; 
+    height: 72px; 
+    text-align: center; 
+    vertical-align: top; 
+    border: none;
+    background: transparent;
+    box-sizing: border-box; 
+    padding: 2px 1px;
+    transition: all 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .dayCell.cell-has-future-note {
+    background-color: #fef3c7 !important;
+    border: none !important;
+    border-radius: 10px;
+  }
+
+  .todyaColor { 
+    background-color: var(--today-bg) !important; 
+    color: #fff !important;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    line-height: 26px !important;
+    margin: 0 auto;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+  }
+
+  .sd-text { 
+    font-size: 15pt;               
+    font-weight: 700; 
+    display: block; 
+    line-height: 1.1; 
+  }
+
+  .ld-text { 
+    font-size: 7.5pt;                
+    display: block; 
+    color: var(--text-muted); 
+    line-height: 1.1; 
+    margin-top: 1px;
+    height: 13px;
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    font-weight: 600;
+  }
+
+  .payday-style {
+    color: #d97706 !important;
+    font-weight: 800 !important;
+  }
+
+  .shift-text {
+    display: block;
+    font-size: 7.5pt;
+    color: #0369a1;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .note-indicator {
+    display: block;
+    font-size: 7.5pt;
+    color: #ffffff;
+    background: #d97706;
+    border-radius: 4px;
+    padding: 1px 3px;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    border: 1px solid #b45309;
+  }
+
+  .note-indicator.note-past {
+    background: #cbd5e1 !important;
+    color: #64748b !important;
+    border-color: #94a3b8 !important;
+    box-shadow: none !important;
+    font-weight: normal !important;
+  }
+
+  .note-indicator.note-future {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+  }
+
+  .holiday-text {
+    color: var(--accent-holiday) !important;
+    font-weight: bold;
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal-card {
+    background: #fff;
+    width: 90%;
+    max-width: 440px;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+
+  .modal-header {
+    font-weight: bold;
+    font-size: 11pt;
+    margin-bottom: 12px;
+    color: var(--primary-color);
+  }
+
+  .modal-card textarea {
+    width: 100%;
+    height: 80px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 9.5pt;
+    resize: none;
+    outline: none;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .modal-actions button {
+    padding: 6px 14px;
+    font-size: 9.5pt;
+  }
+
+  .btn-save {
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+  }
+
+  .btn-stop-alarm {
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+    font-size: 11pt;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  .alarm-panel-container {
+    width: 100%;
+    text-align: left;
+    padding: 8px;
+    font-size: 9pt;
+  }
+
+  .alarm-item {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .alarm-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .alarm-time {
+    font-size: 13pt;
+    font-weight: bold;
+    color: var(--primary-color);
+  }
+
+  .alarm-title {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .alarm-shifts-badge {
+    font-size: 7.5pt;
+    background: #e2e8f0;
+    color: #475569;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .alarm-form-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .alarm-form-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alarm-form-row input[type="text"], .alarm-form-row input[type="time"] {
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 9pt;
+  }
+
+  .shift-checkbox-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    font-size: 8.5pt;
+    margin-top: 4px;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+  }
+
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc; transition: .3s; border-radius: 20px;
+  }
+
+  .slider:before {
+    position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+    background-color: white; transition: .3s; border-radius: 50%;
+  }
+
+  input:checked + .slider { background-color: var(--primary-color); }
+  input:checked + .slider:before { transform: translateX(14px); }
+
+  .help-container {
+    text-align: left;
+    padding: 10px 4px;
+    line-height: 1.6;
+    font-size: 11pt;
+  }
+
+  .help-section {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .help-title {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 12pt;
+    margin-bottom: 6px;
+  }
+
+  .help-list {
+    margin: 0;
+    padding-left: 20px;
+    color: #334155;
+  }
+
+  .help-list li {
+    margin-bottom: 4px;
+  }
+
+  .app-nav {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 62px;
+    background: #ffffff; border-top: 1px solid #e2e8f0;
+    display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+  }
+
+  .nav-item {
+    flex: 1; height: 100%; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; cursor: pointer;
+    color: #64748b; font-size: 8.5pt; font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .nav-icon {
+    font-size: 20px;
+    line-height: 1;
+    margin-bottom: 2px;
+    filter: none;
+    opacity: 0.9;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nav-item.active {
+    color: var(--primary-color);
+    font-weight: 800;
+    background-color: #eff6ff;
+  }
+
+  .nav-item.active .nav-icon {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    width: 70%;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 0 0 4px 4px;
+  }
 </style>
 </head>
 <body>
-<main>
-<h1>HTML → APK</h1>
-<p class="sub">Ton HTML dans une WebView Android. Tu obtiens un projet prêt à compiler (ZIP), avec un workflow GitHub qui sort l'APK tout seul.</p>
 
-<label for="name">Nom de l'app</label>
-<input id="name" type="text" value="Mon Jeu">
-<label for="pkg">Identifiant du package</label>
-<input id="pkg" type="text" value="com.leocat125.monjeu" autocapitalize="none" spellcheck="false">
-<div class="row">
-  <div><label for="ver">Version</label><input id="ver" type="text" value="1.0"></div>
-  <div><label for="ori">Orientation</label>
-    <select id="ori"><option value="unspecified">Auto</option><option value="portrait">Portrait</option><option value="landscape">Paysage</option></select></div>
+<div id="noteModal" class="modal-overlay">
+  <div class="modal-card">
+    <div id="modalTitle" class="modal-header" style="text-align:left;">編輯備註</div>
+    <textarea id="noteInput" placeholder="請輸入備註內容..."></textarea>
+    <div class="modal-actions">
+      <button onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveNote()">儲存</button>
+    </div>
+  </div>
 </div>
-<label class="chk"><input id="fs" type="checkbox" checked> Plein écran (sans barre d'état)</label>
-<label class="chk"><input id="rel" type="checkbox"> APK release signé (pour publier et mettre à jour)</label>
 
-<label for="file">Fichier HTML</label>
-<input id="file" type="file" accept=".html,.htm">
-<label for="src">…ou colle le code ici</label>
-<textarea id="src" placeholder="<!DOCTYPE html>…" spellcheck="false"></textarea>
+<div id="alarmTriggerModal" class="modal-overlay">
+  <div class="modal-card">
+    <div style="font-size: 28px; margin-bottom: 6px;">⏰</div>
+    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 12pt; color:#0f172a;">鬧鐘</div>
+    <div id="alarmTriggerDetail" style="font-size: 10pt; color:#64748b; margin-bottom: 16px;">班別時間到了！</div>
+    <button class="btn-stop-alarm" onclick="stopAlarm()">確認並關閉鬧鐘</button>
+  </div>
+</div>
 
-<label for="assets">Fichiers annexes (images, sons, JS, même dossier que le HTML)</label>
-<input id="assets" type="file" multiple>
-<label for="icon">Icône (facultatif, n'importe quelle image, recadrée en carré)</label>
-<input id="icon" type="file" accept="image/*">
+<div class="calendar-container">
+  <!-- 工時統計 Tab -->
+  <div id="tab-stats" class="work-hours-panel tab-pane">
+    <div id="statsSwipeWrapper" class="stats-swipe-wrapper">
+      <div class="panel-title" id="panelTitle">當月工時統計</div>
+      <div class="panel-subtitle" id="officeHoursInfo">(辦公: 0 hr)</div>
+      <table class="work-hours-table">
+        <thead>
+          <tr>
+            <th>班別</th>
+            <th>出勤</th>
+            <th>差異</th>
+            <th>交接</th>
+            <th>國假</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="rowA"><th>A 班</th><td id="hrsA">0</td><td id="diffA">0</td><td id="handA">0</td><td id="holA">0</td></tr>
+          <tr id="rowB"><th>B 班</th><td id="hrsB">0</td><td id="diffB">0</td><td id="handB">0</td><td id="holB">0</td></tr>
+          <tr id="rowC"><th>C 班</th><td id="hrsC">0</td><td id="diffC">0</td><td id="handC">0</td><td id="holC">0</td></tr>
+          <tr id="rowD"><th>D 班</th><td id="hrsD">0</td><td id="diffD">0</td><td id="handD">0</td><td id="holD">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<label for="tok">Token GitHub (pour compiler en ligne)</label>
-<input id="tok" type="text" placeholder="ghp_…" autocapitalize="none" spellcheck="false" autocomplete="off">
-<label for="repo">Nom du dépôt (facultatif)</label>
-<input id="repo" type="text" placeholder="auto" autocapitalize="none" spellcheck="false">
-<p class="sub" style="font-size:13px;margin:10px 0 0">GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic), cases <b>repo</b> + <b>workflow</b>. Le dépôt créé est public. Le token reste sur cet appareil.</p>
-<button id="cloud">Compiler l'APK automatiquement</button>
-<button id="go" style="background:transparent;color:var(--acc);border:1px solid var(--line);margin-top:12px">Télécharger juste le projet (ZIP)</button>
-<div id="msg"></div>
-</main>
+  <!-- 月曆 Tab -->
+  <div id="tab-calendar" class="main-panel tab-pane active">
+    <div class="cal-header">
+      <div class="header-controls">
+        <div class="header-top">
+          <span class="roc-text">中華民國</span>
+          <select id="SY" onchange="updateCalendar()"></select>
+          <select id="SM" onchange="updateCalendar()"></select>
+          
+          <div class="shift-btn-group">
+            <button id="btnA" onclick="selectShift('A')">A班</button>
+            <button id="btnB" onclick="selectShift('B')">B班</button>
+            <button id="btnC" onclick="selectShift('C')">C班</button>
+            <button id="btnD" onclick="selectShift('D')">D班</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cal-swipe-wrapper" id="calSwipeWrapper">
+      <table class="cal-table" id="mainCalTable">
+        <thead>
+          <tr class="week-header">
+            <th style="color: var(--accent-holiday);">日</th>
+            <th>一</th>
+            <th>二</th>
+            <th>三</th>
+            <th>四</th>
+            <th>五</th>
+            <th style="color: var(--accent-saturday);">六</th>
+          </tr>
+        </thead>
+        <tbody id="calBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 鬧鐘設定 Tab -->
+  <div id="tab-alarm" class="main-panel tab-pane">
+    <div class="panel-title" style="margin-bottom: 10px;">⏰ 值班鬧鐘設定</div>
+    <div class="alarm-panel-container">
+      <div style="margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+        <div style="font-weight:bold; font-size:9pt; margin-bottom:4px; color:#475569;">➕ 新增鬧鐘</div>
+        <div class="alarm-form-row">
+          <input type="time" id="newAlarmTime" value="07:30">
+          <input type="text" id="newAlarmTitle" placeholder="鬧鐘名稱 (如: 接班)">
+        </div>
+        <div class="alarm-form-row">
+          <select id="newAlarmTiming" style="flex:1;">
+            <option value="0">當天</option>
+            <option value="1">前一天</option>
+          </select>
+          <select id="newAlarmSound" style="flex:1;">
+            <option value="sunrise">和弦 (Sunrise)</option>
+            <option value="beep">急促 (Beep)</option>
+            <option value="chime">鐘聲 (Chime)</option>
+            <option value="siren">警報 (Siren)</option>
+          </select>
+        </div>
+        <div class="shift-checkbox-group" id="newAlarmShifts">
+          <label><input type="checkbox" value="一值1" checked> 一值1</label>
+          <label><input type="checkbox" value="一值2" checked> 一值2</label>
+          <label><input type="checkbox" value="一值3" checked> 一值3</label>
+          <label><input type="checkbox" value="二值1" checked> 二值1</label>
+          <label><input type="checkbox" value="二值2" checked> 二值2</label>
+          <label><input type="checkbox" value="二值3" checked> 二值3</label>
+          <label><input type="checkbox" value="三值1" checked> 三值1</label>
+          <label><input type="checkbox" value="三值2" checked> 三值2</label>
+          <label><input type="checkbox" value="三值3" checked> 三值3</label>
+        </div>
+        <button class="btn-save" style="margin-top:8px; width:100%; padding:6px; font-weight:bold; font-size:9pt;" onclick="addAlarm()">加入鬧鐘</button>
+      </div>
+
+      <div id="alarmListContainer">
+        <div id="alarmList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 操作說明 Tab -->
+  <div id="tab-help" class="main-panel tab-pane">
+    <div class="panel-title" style="margin-bottom: 10px; font-size: 13pt;">📖 操作說明</div>
+    <div class="help-container">
+      <div class="help-section">
+        <div class="help-title">📅 月曆</div>
+        <ul class="help-list">
+          <li><b>切換班別：</b>點擊上方【A/B/C/D班】按鈕即可更換。</li>
+          <li><b>切換月份：</b>左右滑動月曆或由上方下拉選單切換。</li>
+          <li><b>編輯備註：</b>點擊日期儲存格新增或修改備註。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">📊 工時</div>
+        <ul class="help-list">
+          <li><b>切換月份：</b>左右滑動此頁面或由主頁下拉選單切換月份。</li>
+          <li><b>時數計算：</b>自動加總出勤時數，國定假日自動扣減。</li>
+          <li><b>差異與交接：</b>自動採計辦公時數差異與交接時數。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">⏰ 鬧鐘</div>
+        <ul class="help-list">
+          <li><b>班別連動：</b>勾選對應班別，僅輪值當天/前一天響鈴。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-nav">
+  <div class="nav-item active" onclick="switchTab('calendar', this)">
+    <span class="nav-icon">📅</span>
+    <span>月曆</span>
+  </div>
+  <div class="nav-item" onclick="switchTab('stats', this)">
+    <span class="nav-icon">📊</span>
+    <span>工時</span>
+  </div>
+  <div class="nav-item" onclick="switchTab('alarm', this)">
+    <span class="nav-icon">⏰</span>
+    <span>鬧鐘</span>
+  </div>
+  <div class="nav-item" onclick="switchTab('help', this)">
+    <span class="nav-icon">📖</span>
+    <span>說明</span>
+  </div>
+  <div class="nav-item" onclick="exitApp()">
+    <span class="nav-icon">🚪</span>
+    <span>退出</span>
+  </div>
+</div>
 
 <script>
-const $=id=>document.getElementById(id);
-const enc=new TextEncoder();
-const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"\\'");
+var Today = new Date();
+var tY = Today.getFullYear();
+var tM = Today.getMonth();
+var tD = Today.getDate();
+var todayDateStr = tY + '-' + String(tM + 1).padStart(2, '0') + '-' + String(tD).padStart(2, '0');
+var currentCalData = null;
 
-/* --- mini writer ZIP (sans compression, 100% hors-ligne) --- */
-const T=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
-const crc=b=>{let c=-1;for(let i=0;i<b.length;i++)c=T[(c^b[i])&255]^(c>>>8);return(c^-1)>>>0};
-function zip(files){
-  const parts=[],cen=[];let off=0;
-  for(const f of files){
-    const n=enc.encode(f.name),c=crc(f.data),sz=f.data.length;
-    const h=new DataView(new ArrayBuffer(30));
-    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);
-    h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,sz,true);h.setUint32(22,sz,true);h.setUint16(26,n.length,true);
-    parts.push(new Uint8Array(h.buffer),n,f.data);
-    const d=new DataView(new ArrayBuffer(46));
-    d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint16(8,0x0800,true);
-    d.setUint16(14,0x21,true);d.setUint32(16,c,true);d.setUint32(20,sz,true);d.setUint32(24,sz,true);d.setUint16(28,n.length,true);d.setUint32(42,off,true);
-    cen.push(new Uint8Array(d.buffer),n);
-    off+=30+n.length+sz;
-  }
-  let cs=0;cen.forEach(x=>cs+=x.length);
-  const e=new DataView(new ArrayBuffer(22));
-  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
-  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/zip'});
-}
+var currentShift = localStorage.getItem('selectedShift') || 'D'; 
+var selectedDateKey = '';
 
-const readText=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsText(f)});
-const readBytes=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(new Uint8Array(x.result));x.readAsArrayBuffer(f)});
-async function resize(file,sz){
-  const bm=await createImageBitmap(file),c=document.createElement('canvas');c.width=c.height=sz;
-  const r=Math.min(bm.width,bm.height);
-  c.getContext('2d').drawImage(bm,(bm.width-r)/2,(bm.height-r)/2,r,r,0,0,sz,sz);
-  const b=await new Promise(ok=>c.toBlob(ok,'image/png'));
-  return new Uint8Array(await b.arrayBuffer());
-}
-function say(html,err){const m=$('msg');m.className=err?'err':'';m.innerHTML=html;m.style.display='block'}
+var alarms = JSON.parse(localStorage.getItem('shift_alarms') || '[]');
 
-$('file').onchange=async e=>{const f=e.target.files[0];if(f)$('src').value=await readText(f)};
-
-async function collect(){
-  const name=$('name').value.trim(),pkg=$('pkg').value.trim(),ver=$('ver').value.trim()||'1.0';
-  const html=$('src').value;
-  if(!name)return say('Donne un nom à l\'app.',1);
-  if(!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/.test(pkg))return say('Package invalide. Exemple : <b>com.leocat125.monjeu</b> (minuscules, chiffres, points, au moins deux segments).',1);
-  if(!html.trim())return say('Ajoute un fichier HTML ou colle ton code.',1);
-
-  const ori=$('ori').value,fs=$('fs').checked,iconF=$('icon').files[0];
-  const theme=fs?'@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen':'@android:style/Theme.DeviceDefault.NoActionBar';
-  const files=[],add=(p,d)=>files.push({name:p,data:typeof d==='string'?enc.encode(d):d});
-  const safe=name.replace(/[^\w\-]+/g,'_');
-
-  add('settings.gradle',`pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositories { google(); mavenCentral() } }
-rootProject.name = "${safe}"
-include ':app'
-`);
-  add('build.gradle',`plugins { id 'com.android.application' version '8.5.2' apply false }
-`);
-  add('gradle.properties',`org.gradle.jvmargs=-Xmx2g\nandroid.useAndroidX=false\n`);
-  add('app/build.gradle',`plugins { id 'com.android.application' }
-android {
-    namespace '${pkg}'
-    compileSdk 34
-    defaultConfig {
-        applicationId '${pkg}'
-        minSdk 21
-        targetSdk 34
-        versionCode 1
-        versionName '${esc(ver)}'
-    }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-    lint { checkReleaseBuilds false; abortOnError false }
-    signingConfigs { release { storeFile file('../release.jks'); storePassword 'android123'; keyAlias 'key'; keyPassword 'android123' } }
-    buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false } }
-}
-`);
-  add('app/src/main/AndroidManifest.xml',`<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <application
-        android:label="${esc(name)}"
-        ${iconF?'android:icon="@mipmap/ic_launcher"':''}
-        android:usesCleartextTraffic="true"
-        android:theme="${theme}">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:screenOrientation="${ori}"
-            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-    </application>
-</manifest>
-`);
-  add('app/src/main/java/'+pkg.replace(/\./g,'/')+'/MainActivity.java',`package ${pkg};
-
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-
-public class MainActivity extends Activity {
-    private WebView web;
-    private ValueCallback<Uri[]> fileCb;
-
-    @Override
-    protected void onCreate(Bundle b) {
-        super.onCreate(b);
-        web = new WebView(this);
-        setContentView(web);
-        WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-        s.setAllowFileAccess(true);
-        s.setAllowContentAccess(true);
-        s.setMediaPlaybackRequiresUserGesture(false);
-        web.setWebViewClient(new WebViewClient());
-        web.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
-                if (fileCb != null) fileCb.onReceiveValue(null);
-                fileCb = cb;
-                try {
-                    startActivityForResult(p.createIntent(), 1);
-                } catch (Exception e) {
-                    fileCb = null;
-                    return false;
-                }
-                return true;
-            }
-        });
-        web.loadUrl("file:///android_asset/index.html");
-    }
-
-    @Override
-    protected void onActivityResult(int req, int res, Intent data) {
-        if (req == 1 && fileCb != null) {
-            fileCb.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res, data));
-            fileCb = null;
-        }
-        super.onActivityResult(req, res, data);
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (web.canGoBack()) web.goBack(); else super.onBackPressed();
-    }
-}
-`);
-  add('app/src/main/assets/index.html',html);
-  for(const f of $('assets').files)add('app/src/main/assets/'+f.name,await readBytes(f));
-  if(iconF)for(const [d,z] of [['mdpi',48],['hdpi',72],['xhdpi',96],['xxhdpi',144],['xxxhdpi',192]])
-    add('app/src/main/res/mipmap-'+d+'/ic_launcher.png',await resize(iconF,z));
-  const rel=$('rel').checked,apk='app/build/outputs/apk/'+(rel?'release':'debug')+'/*.apk';
-  const ks=rel?`      - name: Keystore
-        run: |
-          if [ ! -f release.jks ]; then
-            keytool -genkeypair -keystore release.jks -alias key -keyalg RSA -keysize 2048 -validity 10000 -storepass android123 -keypass android123 -dname "CN=${name.replace(/[^\w ]/g,'')}"
-            git config user.name bot
-            git config user.email bot@users.noreply.github.com
-            git add release.jks
-            git commit -m keystore
-            git push
-          fi
-`:'';
-  add('.github/workflows/build.yml',`name: Build APK
-on: [push, workflow_dispatch]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.7
-${ks}      - run: gradle ${rel?'assembleRelease':'assembleDebug'}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: ${apk}
-      - name: Publier l'APK
-        env:
-          GH_TOKEN: \${{ github.token }}
-        run: gh release create "v\${{ github.run_number }}" ${apk} --title "APK build \${{ github.run_number }}" --notes "APK debug"
-`);
-  add('LISEZMOI.txt',`${name} — projet Android (WebView)
-
-Option A — Android Studio
-1. Ouvre ce dossier dans Android Studio.
-2. Build > Build APK(s). L'APK est dans app/build/outputs/apk/debug/.
-
-Option B — GitHub (sans PC)
-1. Crée un dépôt GitHub et envoie tout le contenu du ZIP.
-2. Onglet Actions > "Build APK" > télécharge l'artefact "apk".
-
-Pour changer le HTML : remplace app/src/main/assets/index.html.
-Les fichiers annexes (images, JS, sons) vont dans le même dossier assets.
-`);
-
-  return {files,safe};
-}
-async function zipGo(){
-  const c=await collect();if(!c)return;const {files,safe}=c;
-  const url=URL.createObjectURL(zip(files));
-  const a=document.createElement('a');a.href=url;a.download=safe+'-android-project.zip';document.body.appendChild(a);a.click();a.remove();
-  say(`<b>Projet généré</b> : ${esc(safe)}-android-project.zip<ol><li>Envoie le contenu du ZIP sur un dépôt GitHub.</li><li>Onglet <b>Actions</b> → <b>Build APK</b> → télécharge l'artefact <b>apk</b>.</li><li>Ou ouvre le ZIP dans Android Studio → Build APK.</li></ol>`);
+var shiftHours = {
+  "一值1": 9, "一值2": 9, "一值3": 9,
+  "二值1": 8, "二值2": 8, "二值3": 6.5,
+  "三值1": 8.5, "三值2": 7, "三值3": 7,
+  "大空1": 0, "大空2": 0, "小空1": 0
 };
-$('go').onclick=zipGo;
 
-let tok='';
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
-async function gh(path,method,body){
-  const r=await fetch('https://api.github.com'+path,{method:method||'GET',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok){const e=new Error(j.message||('HTTP '+r.status));e.status=r.status;throw e}
-  return j;
-}
-try{$('tok').value=localStorage.getItem('h2a_tok')||''}catch(e){}
+var lunarInfo = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aaef,
+  0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x04b55,0x04b60,0x0a570,0x054e4,0x0d260,
+  0x0e968,0x0d520,0x0daa0,0x06aa6,0x056d0,0x04ae0,0x0a9d4,0x0a4d0,0x0d150,0x0f252,
+  0x0d520
+];
 
-$('cloud').onclick=async()=>{
-  try{
-    tok=$('tok').value.trim();
-    if(!tok)return say('Colle ton token GitHub (voir l\'aide juste au-dessus).',1);
-    const c=await collect();if(!c)return;const {files,safe}=c;
-    try{localStorage.setItem('h2a_tok',tok)}catch(e){}
-    say('Connexion à GitHub…');
-    const me=await gh('/user');
-    const repo=($('repo').value.trim()||safe.toLowerCase()).replace(/[^\w.\-]+/g,'-');
-    let info;
-    try{info=await gh('/user/repos','POST',{name:repo,auto_init:true,private:false})}
-    catch(e){if(e.status!==422)throw e;info=await gh(`/repos/${me.login}/${repo}`)}
-    const base=`/repos/${me.login}/${repo}`,br=info.default_branch||'main';
-    say('Envoi des fichiers…');
-    let head;
-    for(let i=0;i<6;i++){try{head=(await gh(`${base}/git/ref/heads/${br}`)).object.sha;break}catch(e){await sleep(1500)}}
-    if(!head)throw new Error('Dépôt pas prêt, réessaie dans quelques secondes.');
-    const tree=[];
-    for(const f of files){
-      const b=await gh(`${base}/git/blobs`,'POST',{content:b64(f.data),encoding:'base64'});
-      tree.push({path:f.name,mode:'100644',type:'blob',sha:b.sha});
-    }
-    const hc=await gh(`${base}/git/commits/${head}`);
-    const t=await gh(`${base}/git/trees`,'POST',{tree,base_tree:hc.tree.sha});
-    const cm=await gh(`${base}/git/commits`,'POST',{message:'APK build',tree:t.sha,parents:[head]});
-    await gh(`${base}/git/refs/heads/${br}`,'PATCH',{sha:cm.sha,force:true});
-    const t0=Date.now();
-    for(;;){
-      await sleep(8000);
-      const r=await gh(`${base}/actions/runs?head_sha=${cm.sha}`);
-      const run=r.workflow_runs&&r.workflow_runs[0];
-      if(run&&run.status==='completed'){
-        if(run.conclusion==='success')break;
-        return say(`Le build a échoué. <a style="color:var(--acc)" href="${run.html_url}" target="_blank">Voir les logs</a> et envoie-moi l'erreur.`,1);
-      }
-      if(Date.now()-t0>900000)return say(`Ça dure trop longtemps. <a style="color:var(--acc)" href="https://github.com/${me.login}/${repo}/actions" target="_blank">Vérifie sur GitHub</a>.`,1);
-      say('Compilation en cours… '+Math.round((Date.now()-t0)/1000)+' s (compte 2 à 5 min)');
-    }
-    const rel=await gh(`${base}/releases/latest`);
-    const as=rel.assets&&rel.assets[0];
-    if(!as)throw new Error('APK introuvable dans la release.');
-    say(`<b>APK prêt.</b><br><a style="color:var(--ok);font-size:18px" href="${as.browser_download_url}">Télécharger ${as.name}</a><br><small>Ouvre le fichier pour l'installer (autorise les sources inconnues si Android le demande).</small>`);
-  }catch(e){
-    const h=e.status===401?' Token invalide.':(e.status===403||e.status===404)?' Vérifie que le token a les droits repo + workflow.':'';
-    say('Erreur GitHub : '+String(e.message).replace(/</g,'&lt;')+'.'+h,1);
+var solarMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+var Gan = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+var Zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+var nStr1 = ['日','一','二','三','四','五','六','七','八','九','十'];
+var nStr2 = ['初','十','廿','卅','卌'];
+
+var RotatblA=["一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3"];
+var RotatblB=["二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1"];
+var RotatblC=["三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1"];
+var RotatblD=["大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3"];
+
+var sFtv = [
+  "0101*元旦", "0228*和平日", "0501*勞動節", "0928*教師節", "1010*國慶日", "1025*光復節", "1225*行憲日"
+];
+var lFtv = [
+  "0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"
+];
+
+function requestNativeNotificationPermission() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    window.Capacitor.Plugins.LocalNotifications.requestPermissions();
   }
+}
+
+function exitApp() {
+  try {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.exitApp();
+    } else if (navigator.app && typeof navigator.app.exitApp === 'function') {
+      navigator.app.exitApp();
+    } else if (navigator.device && typeof navigator.device.exitApp === 'function') {
+      navigator.device.exitApp();
+    } else if (window.Android && typeof window.Android.exitApp === 'function') {
+      window.Android.exitApp();
+    } else {
+      window.close();
+      setTimeout(function() {
+        // 如果無法直接關閉，提供提示
+        console.log('App exit requested');
+      }, 300);
+    }
+  } catch (e) {
+    console.error(e);
+    window.close();
+  }
+}
+
+function getQingMingDay(y) {
+  var Y = y % 100;
+  var leap = Math.floor(Y / 4);
+  var day = Math.floor(Y * 0.2422 + 4.81) - leap;
+  if (y >= 2000 && y <= 2099 && y % 4 === 0 && Y <= 28) return 4;
+  return day;
+}
+
+function lYearDays(y) {
+  var idx = y - 1900;
+  if(idx < 0 || idx >= lunarInfo.length) return 354;
+  var sum = 348;
+  for(var i=0x8000; i>0x8; i>>=1) sum += (lunarInfo[idx] & i)? 1: 0;
+  return(sum+leapDays(y));
+}
+
+function leapDays(y) {
+  if(leapMonth(y)) return((lunarInfo[y-1900] & 0x10000)? 30: 29);
+  else return(0);
+}
+
+function leapMonth(y) {
+  var idx = y - 1900;
+  if(idx < 0 || idx >= lunarInfo.length) return 0;
+  return(lunarInfo[idx] & 0xf);
+}
+
+function monthDays(y,m) {
+  var idx = y - 1900;
+  if(idx < 0 || idx >= lunarInfo.length) return 30;
+  return((lunarInfo[idx] & (0x10000>>m))? 30: 29);
+}
+
+function Lunar(objDate) {
+  var i, leap=0, temp=0;
+  var offset = (Date.UTC(objDate.getFullYear(),objDate.getMonth(),objDate.getDate()) - Date.UTC(1900,0,31))/86400000;
+  for(i=1900; i<2100 && offset>0; i++) { temp=lYearDays(i); offset-=temp; }
+  if(offset<0) { offset+=temp; i--; }
+  this.year = i;
+  leap = leapMonth(i);
+  this.isLeap = false;
+  for(i=1; i<13 && offset>0; i++) {
+     if(leap>0 && i==(leap+1) && this.isLeap==false) { --i; this.isLeap = true; temp = leapDays(this.year); }
+     else { temp = monthDays(this.year, i); }
+     if(this.isLeap==true && i==(leap+1)) this.isLeap = false;
+     offset -= temp;
+  }
+  if(offset==0 && leap>0 && i==leap+1) { if(this.isLeap) this.isLeap = false; else { this.isLeap = true; --i; } }
+  if(offset<0){ offset += temp; --i; }
+  this.month = i;
+  this.day = offset + 1;
+}
+
+function solarDays(y,m) {
+  if(m==1) return(((y%4 == 0) && (y%100 != 0) || (y%400 == 0))? 29: 28);
+  else return(solarMonth[m]);
+}
+
+function cyclical(num) {
+  return(Gan[num%10]+Zhi[num%12]);
+}
+
+function getShiftNameForDate(targetDate) {
+  var y = targetDate.getFullYear();
+  var m = targetDate.getMonth();
+  var d = targetDate.getDate();
+
+  var dayCyclical = Math.floor(Date.UTC(y, m, 1, 0, 0, 0, 0) / 86400000) + 25567 + 10;
+  var rota = (dayCyclical - 10 + (d - 1) + 4) % 12;
+  if(rota < 0) rota += 12;
+  
+  var targetShiftTable = RotatblA;
+  if (currentShift === 'B') targetShiftTable = RotatblB;
+  else if (currentShift === 'C') targetShiftTable = RotatblC;
+  else if (currentShift === 'D') targetShiftTable = RotatblD;
+  
+  return targetShiftTable[rota];
+}
+
+function getCalendarData(y, m) {
+  var sDObj, lDObj;
+  var cY, cM, cD;
+  var length = solarDays(y, m);
+  var firstWeek = new Date(y, m, 1).getDay();
+
+  if(m < 2) cY = cyclical(y - 1900 + 36 - 1);
+  else cY = cyclical(y - 1900 + 36);
+  cM = cyclical((y - 1900) * 12 + m + 12);
+  var dayCyclical = Math.floor(Date.UTC(y, m, 1, 0, 0, 0, 0) / 86400000) + 25567 + 10;
+
+  var extDays = [];
+  var START = -14, END = length + 14;
+
+  for(var i = START; i < END; i++) {
+     sDObj = new Date(y, m, i + 1);
+     lDObj = new Lunar(sDObj);
+     cD = cyclical(dayCyclical + i);
+     var rota = (dayCyclical - 10 + i + 4) % 12;
+     if(rota < 0) rota += 12;
+
+     extDays.push({
+       origI: i,
+       isToday: (sDObj.getFullYear() == tY && sDObj.getMonth() == tM && sDObj.getDate() == tD),
+       sYear: sDObj.getFullYear(), sMonth: sDObj.getMonth() + 1, sDay: sDObj.getDate(),
+       week: sDObj.getDay(),
+       weekText: nStr1[sDObj.getDay()],
+       rota: rota,
+       lYear: lDObj.year, lMonth: lDObj.month, lDay: lDObj.day, isLeap: lDObj.isLeap,
+       cYear: cY, cMonth: cM, cDay: cD,
+       color: '', lunarFestival: '', solarFestival: '',
+       isHoliday: false, isOriginalHoliday: false, isMakeupHoliday: false, noMakeup: false,
+       isPayday: false
+     });
+  }
+
+  for(var j = 0; j < extDays.length; j++) {
+     var d = extDays[j];
+     var sStr = (d.sMonth < 10 ? '0' : '') + d.sMonth + (d.sDay < 10 ? '0' : '') + d.sDay;
+     for(var k = 0; k < sFtv.length; k++) {
+        var match = sFtv[k].match(/^(\d{2})(\d{2})([\*\#])(.+)$/);
+        if(match && match[1] + match[2] === sStr) {
+           d.solarFestival += match[4] + ' ';
+           d.color = 'var(--accent-holiday)';
+           d.isHoliday = true; d.isOriginalHoliday = true;
+           if(match[3] === '#') d.noMakeup = true;
+        }
+     }
+
+     if (!d.isLeap) {
+        var lStr = (d.lMonth < 10 ? '0' : '') + d.lMonth + (d.lDay < 10 ? '0' : '') + d.lDay;
+        for(var k = 0; k < lFtv.length; k++) {
+           var match = lFtv[k].match(/^(\d{2})(.{2})([\*\#])(.+)$/);
+           if(match && match[1] + match[2] === lStr) {
+              d.lunarFestival += match[4] + ' ';
+              d.color = 'var(--accent-holiday)';
+              d.isHoliday = true; d.isOriginalHoliday = true;
+           }
+        }
+        if (d.lMonth === 1 && d.lDay === 1) {
+           if (j >= 1) { extDays[j-1].lunarFestival += "除夕 "; extDays[j-1].color = 'var(--accent-holiday)'; extDays[j-1].isHoliday = true; extDays[j-1].isOriginalHoliday = true; }
+           if (j >= 2) { extDays[j-2].lunarFestival += "小年夜 "; extDays[j-2].color = 'var(--accent-holiday)'; extDays[j-2].isHoliday = true; extDays[j-2].isOriginalHoliday = true; }
+        }
+     }
+
+     if(d.sMonth === 4) {
+        var qmDay = getQingMingDay(d.sYear);
+        if(qmDay === 4) {
+           var targetCheckObj = extDays.find(function(item) { return item.sYear === d.sYear && item.sMonth === 4 && item.sDay === 4; });
+           if (targetCheckObj && targetCheckObj.week === 4) {
+              if(d.sDay === 4) { d.solarFestival += "兒童節 清明節 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
+              else if(d.sDay === 5) { d.solarFestival += "放假 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isMakeupHoliday = true; }
+           } else {
+              if(d.sDay === 3 || d.sDay === 4) { d.solarFestival += (d.sDay===3?"兒童節 ":"清明節 "); d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
+           }
+        } else {
+           if(d.sDay === 4 || d.sDay === qmDay) { d.solarFestival += (d.sDay===4?"兒童節 ":"清明節 "); d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
+        }
+     }
+  }
+
+  for(var j = 0; j < extDays.length; j++) {
+     var d = extDays[j];
+     if(d.isOriginalHoliday && !d.noMakeup && (d.week === 6 || d.week === 0)) {
+        var targetIdx = -1;
+        var isSpringFest = d.lunarFestival.includes("小年夜") || d.lunarFestival.includes("除夕") || d.lunarFestival.includes("春節");
+        
+        if (isSpringFest) {
+           targetIdx = j + 1;
+           while(targetIdx < extDays.length && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx++;
+        } else if(d.week === 6) {
+           targetIdx = j - 1;
+           while(targetIdx >= 0 && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx--;
+        } else if(d.week === 0) {
+           targetIdx = j + 1;
+           while(targetIdx < extDays.length && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx++;
+        }
+        
+        if(targetIdx >= 0 && targetIdx < extDays.length) {
+           extDays[targetIdx].solarFestival += "補假 ";
+           extDays[targetIdx].color = 'var(--accent-holiday)';
+           extDays[targetIdx].isHoliday = true; extDays[targetIdx].isMakeupHoliday = true;
+        }
+     }
+  }
+
+  var targetPayIdx = -1;
+  for(var j = 0; j < extDays.length; j++) {
+     if (extDays[j].sYear === y && (extDays[j].sMonth - 1) === m && extDays[j].sDay === 6) {
+        targetPayIdx = j;
+        break;
+     }
+  }
+
+  if (targetPayIdx !== -1) {
+     while (targetPayIdx >= 0) {
+        var cur = extDays[targetPayIdx];
+        var isWeekend = (cur.week === 0 || cur.week === 6);
+        if (!isWeekend && !cur.isHoliday) {
+           cur.isPayday = true;
+           break;
+        }
+        targetPayIdx--;
+     }
+  }
+
+  var days = [];
+  for(var j = 0; j < extDays.length; j++) {
+     if (extDays[j].origI >= 0 && extDays[j].origI < length) days.push(extDays[j]);
+  }
+  return { firstWeek: firstWeek, length: length, days: days };
+}
+
+function cDay(d){
+  switch (d) {
+     case 10: return '初十';
+     case 20: return '二十';
+     case 30: return '三十';
+     default : return nStr2[Math.floor(d/10)] + nStr1[d%10];
+  }
+}
+
+function selectShift(shiftName) {
+  currentShift = shiftName;
+  localStorage.setItem('selectedShift', shiftName);
+  updateShiftButtonsUI();
+  updateCalendar();
+  syncNativeAlarms();
+}
+
+function updateShiftButtonsUI() {
+  ['A','B','C','D'].forEach(s => {
+    var btn = document.getElementById('btn' + s);
+    if(btn) {
+      if(s === currentShift) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+    
+    var row = document.getElementById('row' + s);
+    if(row) {
+      if(s === currentShift) row.classList.add('selected-row');
+      else row.classList.remove('selected-row');
+    }
+  });
+}
+
+function drawCld(SY,SM) {
+  var titleElem = document.getElementById("panelTitle");
+  if(titleElem) {
+     var rocYear = SY - 1911;
+     var displayMonth = SM + 1;
+     titleElem.innerText = "民國 " + rocYear + " 年 " + displayMonth + " 月 工時統計";
+  }
+
+  currentCalData = getCalendarData(SY,SM);
+
+  var workDays = 0;
+  var totalHoursA = 0, totalHoursB = 0, totalHoursC = 0, totalHoursD = 0;
+  var holHoursA = 0, holHoursB = 0, holHoursC = 0, holHoursD = 0;
+  var handHoursA = 0, handHoursB = 0, handHoursC = 0, handHoursD = 0;
+
+  for(var i=0; i<42; i++) {
+     var sObj = document.getElementById('SD'+ i);
+     var lObj = document.getElementById('LD'+ i);
+     var shiftObj = document.getElementById('SHIFT'+ i);
+     var noteObj = document.getElementById('NOTE'+ i);
+     var cellObj = document.getElementById('cell'+ i);
+
+     if(!sObj || !lObj) continue;
+
+     sObj.className = 'sd-text';
+     if (cellObj) cellObj.classList.remove('cell-has-future-note');
+
+     var sD = i - currentCalData.firstWeek;
+
+     if(sD > -1 && sD < currentCalData.length) {
+        var dObj = currentCalData.days[sD];
+        sObj.innerHTML = sD+1;
+        if(dObj.isToday) sObj.className = 'sd-text todyaColor';
+        sObj.style.color = dObj.isToday ? '#fff' : (dObj.color || (i%7===0 ? 'var(--accent-holiday)' : (i%7===6 ? 'var(--accent-saturday)' : 'var(--text-main)')));
+
+        var r = dObj.rota;
+        var hA = shiftHours[RotatblA[r]] || 0;
+        var hB = shiftHours[RotatblB[r]] || 0;
+        var hC = shiftHours[RotatblC[r]] || 0;
+        var hD = shiftHours[RotatblD[r]] || 0;
+
+        totalHoursA += hA; totalHoursB += hB; totalHoursC += hC; totalHoursD += hD;
+        if(hA > 0) handHoursA += 0.5;
+        if(hB > 0) handHoursB += 0.5;
+        if(hC > 0) handHoursC += 0.5;
+        if(hD > 0) handHoursD += 0.5;
+
+        if(dObj.week !== 0 && dObj.week !== 6 && !dObj.isHoliday) workDays++;
+        if(dObj.isHoliday && !dObj.isMakeupHoliday) { 
+           holHoursA += Math.min(hA, 8); holHoursB += Math.min(hB, 8);
+           holHoursC += Math.min(hC, 8); holHoursD += Math.min(hD, 8);
+        }
+
+        if (dObj.isPayday) {
+           lObj.innerHTML = '<span class="payday-style">發薪日</span>';
+        } else {
+           if(dObj.lDay==1) lObj.innerHTML = '<b>'+(dObj.isLeap?'閏':'') + dObj.lMonth + '月</b>';
+           else lObj.innerHTML = cDay(dObj.lDay);
+
+           var festStr = dObj.lunarFestival || dObj.solarFestival;
+           if(festStr && festStr.length > 0) lObj.innerHTML = '<span class="holiday-text">' + festStr.trim() + '</span>';
+        }
+
+        if(shiftObj) {
+           var targetShiftTable = RotatblA;
+           if (currentShift === 'B') targetShiftTable = RotatblB;
+           else if (currentShift === 'C') targetShiftTable = RotatblC;
+           else if (currentShift === 'D') targetShiftTable = RotatblD;
+           shiftObj.innerHTML = targetShiftTable[r];
+        }
+
+        var dateKey = dObj.sYear + '-' + (dObj.sMonth < 10 ? '0' : '') + dObj.sMonth + '-' + (dObj.sDay < 10 ? '0' : '') + dObj.sDay;
+        var savedNote = localStorage.getItem('note_' + currentShift + '_' + dateKey);
+        
+        var isPastDate = dateKey < todayDateStr;
+
+        if (noteObj) {
+          if (savedNote) {
+            noteObj.innerText = savedNote;
+            noteObj.style.display = 'block';
+            
+            if (isPastDate) {
+              noteObj.className = 'note-indicator note-past';
+            } else {
+              noteObj.className = 'note-indicator note-future';
+              if (cellObj) cellObj.classList.add('cell-has-future-note');
+            }
+          } else {
+            noteObj.innerText = '';
+            noteObj.style.display = 'none';
+            noteObj.className = 'note-indicator';
+          }
+        }
+
+        cellObj.onclick = (function(key, year, month, day) {
+           return function() { 
+              openModal(key, year, month, day);
+           };
+        })(dateKey, dObj.sYear, dObj.sMonth, dObj.sDay);
+
+     } else {
+        sObj.innerHTML = '';
+        lObj.innerHTML = '';
+        if(shiftObj) shiftObj.innerHTML = '';
+        if(noteObj) { noteObj.innerText = ''; noteObj.style.display = 'none'; }
+        cellObj.onclick = null;
+     }
+  }
+
+  var officeHours = workDays * 8;
+  document.getElementById("officeHoursInfo").innerText = "(辦公: " + officeHours + " hr)";
+  document.getElementById("holA").innerText = holHoursA;
+  document.getElementById("holB").innerText = holHoursB;
+  document.getElementById("holC").innerText = holHoursC;
+  document.getElementById("holD").innerText = holHoursD;
+  document.getElementById("handA").innerText = handHoursA;
+  document.getElementById("handB").innerText = handHoursB;
+  document.getElementById("handC").innerText = handHoursC;
+  document.getElementById("handD").innerText = handHoursD;
+
+  var netA = totalHoursA - holHoursA, netB = totalHoursB - holHoursB;
+  var netC = totalHoursC - holHoursC, netD = totalHoursD - holHoursD;
+
+  document.getElementById("hrsA").innerText = netA;
+  document.getElementById("hrsB").innerText = netB;
+  document.getElementById("hrsC").innerText = netC;
+  document.getElementById("hrsD").innerText = netD;
+  document.getElementById("diffA").innerText = (netA - officeHours);
+  document.getElementById("diffB").innerText = (netB - officeHours);
+  document.getElementById("diffC").innerText = (netC - officeHours);
+  document.getElementById("diffD").innerText = (netD - officeHours);
+
+  var totalCellsNeeded = currentCalData.firstWeek + currentCalData.length;
+  var row5Elem = document.getElementById('rowGrid5');
+  if (row5Elem) {
+    if (totalCellsNeeded > 35) {
+      row5Elem.style.display = '';
+    } else {
+      row5Elem.style.display = 'none';
+    }
+  }
+}
+
+function updateCalendar() {
+  var sySelect = document.getElementById("SY"), smSelect = document.getElementById("SM");
+  if(!sySelect || !smSelect) return;
+  var y = parseInt(sySelect.value, 10), m = parseInt(smSelect.value, 10);
+  if(!isNaN(y) && !isNaN(m)) drawCld(y, m);
+}
+
+function changeY(dir) {
+  var sySelect = document.getElementById("SY");
+  var idx = sySelect.selectedIndex + dir;
+  if(idx >= 0 && idx < sySelect.options.length) { sySelect.selectedIndex = idx; updateCalendar(); }
+}
+
+function changeM(dir) {
+  var smSelect = document.getElementById("SM");
+  var idx = smSelect.selectedIndex + dir;
+  if(idx >= 0 && idx < 12) smSelect.selectedIndex = idx;
+  else if(idx < 0) { smSelect.selectedIndex = 11; changeY(-1); }
+  else { smSelect.selectedIndex = 0; changeY(1); }
+  updateCalendar();
+}
+
+function bindSwipeGesture(wrapperElem, animatedElem) {
+  if (!wrapperElem || !animatedElem) return;
+
+  var startX = 0, startY = 0;
+  var currentX = 0, currentY = 0;
+  var isDragging = false;
+
+  function handleStart(x, y) {
+    startX = x;
+    startY = y;
+    currentX = x;
+    currentY = y;
+    isDragging = true;
+    animatedElem.style.transition = 'none';
+  }
+
+  function handleMove(x, y) {
+    if (!isDragging) return;
+    currentX = x;
+    currentY = y;
+    var diffX = currentX - startX;
+    var diffY = currentY - startY;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      animatedElem.style.transform = 'translateX(' + diffX + 'px)';
+      animatedElem.style.opacity = 1 - (Math.abs(diffX) / 400);
+    }
+  }
+
+  function handleEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    var diffX = currentX - startX;
+    var diffY = currentY - startY;
+
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      var dir = diffX < 0 ? 1 : -1;
+      
+      animatedElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+      animatedElem.style.transform = 'translateX(' + (dir > 0 ? -100 : 100) + '%)';
+      animatedElem.style.opacity = '0';
+
+      setTimeout(function() {
+        changeM(dir);
+        animatedElem.style.transition = 'none';
+        animatedElem.style.transform = 'translateX(' + (dir > 0 ? 100 : -100) + '%)';
+        
+        setTimeout(function() {
+          animatedElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+          animatedElem.style.transform = 'translateX(0)';
+          animatedElem.style.opacity = '1';
+        }, 20);
+      }, 150);
+    } else {
+      animatedElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+      animatedElem.style.transform = 'translateX(0)';
+      animatedElem.style.opacity = '1';
+    }
+  }
+
+  wrapperElem.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  wrapperElem.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 1) {
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  wrapperElem.addEventListener('touchend', handleEnd, { passive: true });
+
+  wrapperElem.addEventListener('mousedown', function(e) {
+    handleStart(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (isDragging) handleMove(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mouseup', function() {
+    if (isDragging) handleEnd();
+  });
+}
+
+function initSwipeGesture() {
+  bindSwipeGesture(
+    document.getElementById('calSwipeWrapper'),
+    document.getElementById('mainCalTable')
+  );
+  bindSwipeGesture(
+    document.getElementById('tab-stats'),
+    document.getElementById('statsSwipeWrapper')
+  );
+}
+
+function openModal(dateKey, year, month, day) {
+  selectedDateKey = dateKey;
+  var rocYear = year - 1911;
+  document.getElementById('modalTitle').innerText = '民國 ' + rocYear + ' 年 ' + month + ' 月 ' + day + ' 日 (' + currentShift + '班) 備註';
+  var currentNote = localStorage.getItem('note_' + currentShift + '_' + dateKey) || '';
+  document.getElementById('noteInput').value = currentNote;
+  document.getElementById('noteModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('noteModal').classList.remove('active');
+}
+
+function saveNote() {
+  var val = document.getElementById('noteInput').value.trim();
+  var noteStorageKey = 'note_' + currentShift + '_' + selectedDateKey;
+  if (val) {
+    localStorage.setItem(noteStorageKey, val);
+  } else {
+    localStorage.removeItem(noteStorageKey);
+  }
+  closeModal();
+  updateCalendar();
+}
+
+function switchTab(tabName, el) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  if(tabName === 'calendar') {
+     document.getElementById('tab-calendar').classList.add('active');
+  } else if(tabName === 'stats') {
+     document.getElementById('tab-stats').classList.add('active');
+  } else if(tabName === 'alarm') {
+     renderAlarmList();
+     document.getElementById('tab-alarm').classList.add('active');
+  } else if(tabName === 'help') {
+     document.getElementById('tab-help').classList.add('active');
+  }
+  el.classList.add('active');
+}
+
+function saveAlarms() {
+  localStorage.setItem('shift_alarms', JSON.stringify(alarms));
+  syncNativeAlarms();
+}
+
+function syncNativeAlarms() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    var Plugin = window.Capacitor.Plugins.LocalNotifications;
+    
+    Plugin.getPending().then(function(pending) {
+      if (pending.notifications && pending.notifications.length > 0) {
+        Plugin.cancel(pending);
+      }
+      
+      if (Plugin.createChannel) {
+        Plugin.createChannel({
+          id: 'alarm_channel',
+          name: '值班鬧鐘',
+          description: '值班提醒鬧鐘專用管道',
+          importance: 5,
+          visibility: 1,
+          vibration: true
+        });
+      }
+      
+      var now = new Date();
+      var notificationsToSchedule = [];
+
+      alarms.forEach(function(a) {
+        if (!a.enabled) return;
+        var parts = a.time.split(':');
+        var hours = parseInt(parts[0], 10);
+        var minutes = parseInt(parts[1], 10);
+        var advanceDays = parseInt(a.timing || 0, 10);
+
+        for (var i = 0; i < 30; i++) {
+          var targetDate = new Date();
+          targetDate.setDate(now.getDate() + i);
+          targetDate.setHours(hours, minutes, 0, 0);
+
+          if (targetDate > now) {
+            var checkDate = new Date(targetDate);
+            if (advanceDays > 0) {
+              checkDate.setDate(checkDate.getDate() + advanceDays);
+            }
+
+            var shiftName = getShiftNameForDate(checkDate);
+
+            if (a.shifts.includes(shiftName)) {
+              var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
+              
+              notificationsToSchedule.push({
+                title: "⏰ " + a.title,
+                body: timingDesc + "[" + shiftName + "] 時間已到！",
+                id: Math.floor(Math.random() * 2147483647),
+                channelId: 'alarm_channel', 
+                schedule: { 
+                  at: targetDate,
+                  allowWhileIdle: true,
+                  exact: true
+                },
+                extra: { title: a.title, shiftName: shiftName, timing: advanceDays }
+              });
+            }
+          }
+        }
+      });
+
+      if (notificationsToSchedule.length > 0) {
+        Plugin.schedule({ notifications: notificationsToSchedule });
+      }
+    });
+  }
+}
+
+function addAlarm() {
+  requestNativeNotificationPermission();
+  
+  var timeVal = document.getElementById('newAlarmTime').value;
+  var titleVal = document.getElementById('newAlarmTitle').value.trim() || '值班鬧鐘';
+  var soundVal = document.getElementById('newAlarmSound').value;
+  var timingVal = parseInt(document.getElementById('newAlarmTiming').value, 10);
+  var selectedShifts = [];
+  
+  document.querySelectorAll('#newAlarmShifts input[type="checkbox"]:checked').forEach(cb => {
+    selectedShifts.push(cb.value);
+  });
+
+  if (!timeVal || selectedShifts.length === 0) return;
+
+  var newAlarm = {
+    id: Date.now(),
+    time: timeVal,
+    title: titleVal,
+    sound: soundVal,
+    timing: timingVal,
+    shifts: selectedShifts,
+    enabled: true
+  };
+
+  alarms.push(newAlarm);
+  saveAlarms();
+  renderAlarmList();
+  document.getElementById('newAlarmTitle').value = '';
+}
+
+function toggleAlarm(id) {
+  var alarm = alarms.find(a => a.id === id);
+  if (alarm) {
+    alarm.enabled = !alarm.enabled;
+    saveAlarms();
+    renderAlarmList();
+  }
+}
+
+function deleteAlarm(id) {
+  alarms = alarms.filter(a => a.id !== id);
+  saveAlarms();
+  renderAlarmList();
+}
+
+function renderAlarmList() {
+  var listContainer = document.getElementById('alarmList');
+  if (alarms.length === 0) {
+    listContainer.innerHTML = '';
+    return;
+  }
+
+  var soundNames = {
+    'sunrise': '和弦',
+    'beep': '急促',
+    'chime': '鐘聲',
+    'siren': '警報'
+  };
+
+  var timingNames = {
+    0: '當天',
+    1: '前一天'
+  };
+
+  var html = '';
+  alarms.forEach(a => {
+    var soundText = soundNames[a.sound] || '和弦';
+    var timingText = timingNames[a.timing] !== undefined ? timingNames[a.timing] : '當天';
+    html += '<div class="alarm-item">' +
+              '<div class="alarm-item-header">' +
+                '<div>' +
+                  '<span class="alarm-time">' + a.time + '</span>' +
+                  '<span class="alarm-title" style="margin-left:6px;">' + a.title + '</span>' +
+                  '<span style="font-size:7.5pt; color:#64748b; margin-left:4px;">[' + timingText + ' | ' + soundText + ']</span>' +
+                '</div>' +
+                  '<div style="display:flex; align-items:center; gap:8px;">' +
+                  '<label class="switch">' +
+                    '<input type="checkbox" ' + (a.enabled ? 'checked' : '') + ' onchange="toggleAlarm(' + a.id + ')">' +
+                    '<span class="slider"></span>' +
+                  '</label>' +
+                  '<button style="color:#ef4444; border:none; background:transparent; font-weight:bold; font-size:11pt; padding:0 4px;" onclick="deleteAlarm(' + a.id + ')">✕</button>' +
+                '</div>' +
+              '</div>' +
+              '<div>' +
+                '<span class="alarm-shifts-badge">' + a.shifts.join(', ') + '</span>' +
+              '</div>' +
+            '</div>';
+  });
+  listContainer.innerHTML = html;
+}
+
+function stopAlarm() {
+  document.getElementById('alarmTriggerModal').classList.remove('active');
+}
+
+window.onresize = function() {
+  updateCalendar();
+};
+
+window.onload = function() {
+  requestNativeNotificationPermission();
+  
+  var tbody = document.getElementById("calBody");
+  var html = "";
+  var cellIdx = 0;
+  for(var r=0; r<6; r++) {
+    html += '<tr id="rowGrid' + r + '">';
+    for(var c=0; c<7; c++) {
+      html += '<td class="dayCell" id="cell' + cellIdx + '">' +
+              '<span id="SD' + cellIdx + '" class="sd-text"></span>' +
+              '<span id="LD' + cellIdx + '" class="ld-text"></span>' +
+              '<span id="SHIFT' + cellIdx + '" class="shift-text"></span>' +
+              '<span id="NOTE' + cellIdx + '" class="note-indicator"></span>' +
+              '</td>';
+      cellIdx++;
+    }
+    html += "</tr>";
+  }
+  tbody.innerHTML = html;
+
+  var sySelect = document.getElementById("SY"), smSelect = document.getElementById("SM");
+  sySelect.options.length = 0; smSelect.options.length = 0;
+
+  for(var i=2011; i<2100; i++) {
+     var opt = document.createElement("option");
+     opt.value = i; opt.text = (i - 1911) + " 年";
+     sySelect.appendChild(opt);
+  }
+  for(var j=0; j<12; j++) {
+     var opt = document.createElement("option");
+     opt.value = j; opt.text = (j + 1) + " 月";
+     smSelect.appendChild(opt);
+  }
+
+  sySelect.value = tY; smSelect.value = tM;
+  
+  updateShiftButtonsUI();
+  updateCalendar();
+  initSwipeGesture();
+  
+  setTimeout(function() {
+    syncNativeAlarms();
+  }, 1000);
 };
 </script>
 </body>
