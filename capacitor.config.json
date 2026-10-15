@@ -1,6 +1,6 @@
 {
-  "appId": "com.duty.alarm.app",
-  "appName": "值班智慧鬧鐘",
-  "webDir": "www",
+  "appId": "com.example.htmltoapk",
+  "appName": "值班萬年曆",
+  "webDir": "app/src/main/assets",
   "bundledWebRuntime": false
 }
