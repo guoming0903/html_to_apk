@@ -782,6 +782,7 @@ var currentShift = localStorage.getItem('selectedShift') || 'D';
 var selectedDateKey = '';
 
 var alarms = JSON.parse(localStorage.getItem('shift_alarms') || '[]');
+var lastTriggeredMinute = '';
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -841,7 +842,9 @@ function requestNativeNotificationPermission() {
 function exitApp() {
   try {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-      window.Capacitor.Plugins.App.exitApp();
+      window.Capacitor.Plugins.App.exitApp().catch(function(err) {
+        console.log("App exit error: ", err);
+      });
     } else if (navigator.app && typeof navigator.app.exitApp === 'function') {
       navigator.app.exitApp();
     } else if (navigator.device && typeof navigator.device.exitApp === 'function') {
@@ -850,15 +853,82 @@ function exitApp() {
       window.Android.exitApp();
     } else {
       window.close();
-      setTimeout(function() {
-        // 如果無法直接關閉，提供提示
-        console.log('App exit requested');
-      }, 300);
     }
   } catch (e) {
     console.error(e);
     window.close();
   }
+}
+
+function playAlarmSound(type) {
+  try {
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    var duration = 2.0; 
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'beep') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    } else if (type === 'chime') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+    } else if (type === 'siren') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 1.0);
+      osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 2.0);
+    } else { 
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 2.0);
+    }
+
+    gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {
+    console.error("Audio playback error:", e);
+  }
+}
+
+function checkAlarmsRealtime() {
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2, '0');
+  var mm = String(now.getMinutes()).padStart(2, '0');
+  var currentHHMM = hh + ':' + mm;
+
+  if (currentHHMM === lastTriggeredMinute) return;
+
+  alarms.forEach(function(a) {
+    if (!a.enabled) return;
+    if (a.time === currentHHMM) {
+      var advanceDays = parseInt(a.timing || 0, 10);
+      var targetDate = new Date(now);
+      if (advanceDays > 0) {
+        targetDate.setDate(targetDate.getDate() + advanceDays);
+      }
+      var shiftName = getShiftNameForDate(targetDate);
+      if (a.shifts.includes(shiftName)) {
+        lastTriggeredMinute = currentHHMM;
+        triggerAlarmModal(a.title, shiftName, a.sound);
+      }
+    }
+  });
+}
+
+function triggerAlarmModal(title, shiftName, soundType) {
+  document.getElementById('alarmTriggerTitle').innerText = title;
+  document.getElementById('alarmTriggerDetail').innerText = '班別 [' + shiftName + '] 時間已到！';
+  document.getElementById('alarmTriggerModal').classList.add('active');
+  playAlarmSound(soundType);
 }
 
 function getQingMingDay(y) {
@@ -1627,6 +1697,8 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
+  setInterval(checkAlarmsRealtime, 1000);
+
   setTimeout(function() {
     syncNativeAlarms();
   }, 1000);
@@ -1634,3 +1706,4 @@ window.onload = function() {
 </script>
 </body>
 </html>
+
