@@ -1,1 +1,21 @@
+# --- Android / Gradle 暫存與建置檔 ---
+.gradle/
+build/
+app/build/
+*.iml
+local.properties
+.idea/
 
+# --- 機密簽署檔案（非常重要！） ---
+*.jks
+*.keystore
+
+# --- Node.js / Capacitor 相關 ---
+node_modules/
+dist/
+www/
+.ionic/
+
+# --- 作業系統產生的暫存檔 ---
+.DS_Store
+Thumbs.db
