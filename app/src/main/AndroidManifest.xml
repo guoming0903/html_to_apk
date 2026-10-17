@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 基礎網路權限 -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <!-- 接收推播/本地通知權限（Android 13+ 必備） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    
+    <!-- 精確鬧鐘排程權限（確保值班鬧鐘時間到時能準確觸發） -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    
+    <!-- 震動權限（鬧鐘響起時支援震動提示） -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
     <application
         android:label="HTML to APK"
         android:icon="@mipmap/ic_launcher"
