@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (APK 原生鬧鐘版)</title>
+<title>月曆與值班工時統計 (原生背景鬧鐘版)</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -783,6 +783,7 @@ var selectedDateKey = '';
 
 var alarms = JSON.parse(localStorage.getItem('shift_alarms') || '[]');
 var lastTriggeredMinute = '';
+var alarmInterval = null; // 鬧鐘循環播放計時器
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -833,12 +834,6 @@ var lFtv = [
   "0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"
 ];
 
-function requestNativeNotificationPermission() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-  }
-}
-
 function exitApp() {
   try {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
@@ -860,44 +855,169 @@ function exitApp() {
   }
 }
 
+// ----------------- Web Audio API 內建合成音效（支援循環與確認關閉） -----------------
 function playAlarmSound(type) {
-  try {
-    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
+  stopAlarmSoundOnly();
+  
+  function playOnce() {
+    try {
+      var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      var duration = 1.5; 
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'beep') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      } else if (type === 'chime') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+      } else if (type === 'siren') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.7);
+        osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 1.4);
+      } else { 
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 1.5);
+      }
+
+      gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {
+      console.error("Audio playback error:", e);
     }
-    var duration = 2.0; 
-    var osc = audioCtx.createOscillator();
-    var gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+  }
 
-    if (type === 'beep') {
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    } else if (type === 'chime') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-    } else if (type === 'siren') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 1.0);
-      osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 2.0);
-    } else { 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 2.0);
-    }
+  playOnce();
+  alarmInterval = setInterval(playOnce, 2000);
+}
 
-    gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  } catch(e) {
-    console.error("Audio playback error:", e);
+function stopAlarmSoundOnly() {
+  if (alarmInterval) {
+    clearInterval(alarmInterval);
+    alarmInterval = null;
   }
 }
+
+function triggerAlarmModal(title, shiftName, soundType) {
+  document.getElementById('alarmTriggerTitle').innerText = title;
+  document.getElementById('alarmTriggerDetail').innerText = '班別 [' + shiftName + '] 時間已到！';
+  document.getElementById('alarmTriggerModal').classList.add('active');
+  playAlarmSound(soundType);
+}
+
+function stopAlarm() {
+  document.getElementById('alarmTriggerModal').classList.remove('active');
+  stopAlarmSoundOnly();
+}
+// ---------------------------------------------------------------------------------
+
+// ----------------- Capacitor 原生排程（解決背景與休眠不響問題） -----------------
+async function requestNativeNotificationPermission() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+    } catch (e) {
+      console.log("Permission error:", e);
+    }
+  }
+}
+
+async function syncNativeAlarms() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    var Plugin = window.Capacitor.Plugins.LocalNotifications;
+    try {
+      var pending = await Plugin.getPending();
+      if (pending.notifications && pending.notifications.length > 0) {
+        await Plugin.cancel(pending);
+      }
+      
+      if (Plugin.createChannel) {
+        await Plugin.createChannel({
+          id: 'alarm_channel',
+          name: '值班鬧鐘',
+          description: '值班提醒鬧鐘專用管道',
+          importance: 5,
+          visibility: 1,
+          vibration: false
+        });
+      }
+      
+      var now = new Date();
+      var notificationsToSchedule = [];
+
+      alarms.forEach(function(a) {
+        if (!a.enabled) return;
+        var parts = a.time.split(':');
+        var hours = parseInt(parts[0], 10);
+        var minutes = parseInt(parts[1], 10);
+        var advanceDays = parseInt(a.timing || 0, 10);
+
+        for (var i = 0; i < 30; i++) {
+          var targetDate = new Date();
+          targetDate.setDate(now.getDate() + i);
+          targetDate.setHours(hours, minutes, 0, 0);
+
+          if (targetDate > now) {
+            var checkDate = new Date(targetDate);
+            if (advanceDays > 0) {
+              checkDate.setDate(checkDate.getDate() + advanceDays);
+            }
+
+            var shiftName = getShiftNameForDate(checkDate);
+
+            if (a.shifts.includes(shiftName)) {
+              var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
+              
+              notificationsToSchedule.push({
+                title: "⏰ " + a.title,
+                body: timingDesc + "[" + shiftName + "] 時間已到！請點擊確認。",
+                id: Math.floor(Math.random() * 2147483647),
+                channelId: 'alarm_channel',
+                sound: null,
+                schedule: { 
+                  at: targetDate,
+                  allowWhileIdle: true,
+                  exact: true
+                },
+                extra: { title: a.title, shiftName: shiftName, soundType: a.sound }
+              });
+            }
+          }
+        }
+      });
+
+      if (notificationsToSchedule.length > 0) {
+        await Plugin.schedule({ notifications: notificationsToSchedule });
+      }
+    } catch (e) {
+      console.log("Sync native alarms error:", e);
+    }
+  }
+}
+
+function initNativeListeners() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    var Plugin = window.Capacitor.Plugins.LocalNotifications;
+    Plugin.addListener('localNotificationActionPerformed', function(notification) {
+      var extra = notification.notification.extra;
+      if (extra) {
+        triggerAlarmModal(extra.title, extra.shiftName, extra.soundType);
+      }
+    });
+  }
+}
+// ---------------------------------------------------------------------------------
 
 function checkAlarmsRealtime() {
   var now = new Date();
@@ -922,13 +1042,6 @@ function checkAlarmsRealtime() {
       }
     }
   });
-}
-
-function triggerAlarmModal(title, shiftName, soundType) {
-  document.getElementById('alarmTriggerTitle').innerText = title;
-  document.getElementById('alarmTriggerDetail').innerText = '班別 [' + shiftName + '] 時間已到！';
-  document.getElementById('alarmTriggerModal').classList.add('active');
-  playAlarmSound(soundType);
 }
 
 function getQingMingDay(y) {
@@ -1483,77 +1596,7 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
-  syncNativeAlarms();
-}
-
-function syncNativeAlarms() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    var Plugin = window.Capacitor.Plugins.LocalNotifications;
-    
-    Plugin.getPending().then(function(pending) {
-      if (pending.notifications && pending.notifications.length > 0) {
-        Plugin.cancel(pending);
-      }
-      
-      if (Plugin.createChannel) {
-        Plugin.createChannel({
-          id: 'alarm_channel',
-          name: '值班鬧鐘',
-          description: '值班提醒鬧鐘專用管道',
-          importance: 5,
-          visibility: 1,
-          vibration: true
-        });
-      }
-      
-      var now = new Date();
-      var notificationsToSchedule = [];
-
-      alarms.forEach(function(a) {
-        if (!a.enabled) return;
-        var parts = a.time.split(':');
-        var hours = parseInt(parts[0], 10);
-        var minutes = parseInt(parts[1], 10);
-        var advanceDays = parseInt(a.timing || 0, 10);
-
-        for (var i = 0; i < 30; i++) {
-          var targetDate = new Date();
-          targetDate.setDate(now.getDate() + i);
-          targetDate.setHours(hours, minutes, 0, 0);
-
-          if (targetDate > now) {
-            var checkDate = new Date(targetDate);
-            if (advanceDays > 0) {
-              checkDate.setDate(checkDate.getDate() + advanceDays);
-            }
-
-            var shiftName = getShiftNameForDate(checkDate);
-
-            if (a.shifts.includes(shiftName)) {
-              var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
-              
-              notificationsToSchedule.push({
-                title: "⏰ " + a.title,
-                body: timingDesc + "[" + shiftName + "] 時間已到！",
-                id: Math.floor(Math.random() * 2147483647),
-                channelId: 'alarm_channel', 
-                schedule: { 
-                  at: targetDate,
-                  allowWhileIdle: true,
-                  exact: true
-                },
-                extra: { title: a.title, shiftName: shiftName, timing: advanceDays }
-              });
-            }
-          }
-        }
-      });
-
-      if (notificationsToSchedule.length > 0) {
-        Plugin.schedule({ notifications: notificationsToSchedule });
-      }
-    });
-  }
+  syncNativeAlarms(); // 儲存時自動同步到原生系統排程
 }
 
 function addAlarm() {
@@ -1648,16 +1691,13 @@ function renderAlarmList() {
   listContainer.innerHTML = html;
 }
 
-function stopAlarm() {
-  document.getElementById('alarmTriggerModal').classList.remove('active');
-}
-
 window.onresize = function() {
   updateCalendar();
 };
 
 window.onload = function() {
   requestNativeNotificationPermission();
+  initNativeListeners();
   
   var tbody = document.getElementById("calBody");
   var html = "";
@@ -1697,8 +1737,10 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
+  // 背景/前景實時比對計時器
   setInterval(checkAlarmsRealtime, 1000);
 
+  // 啟動時同步一次原生排程
   setTimeout(function() {
     syncNativeAlarms();
   }, 1000);
@@ -1706,4 +1748,3 @@ window.onload = function() {
 </script>
 </body>
 </html>
-
