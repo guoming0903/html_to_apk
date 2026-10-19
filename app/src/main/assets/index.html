@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (網頁鬧鐘版)</title>
+<title>月曆與值班工時統計 (原生休眠鬧鐘版)</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -749,7 +749,7 @@
         <div class="help-title">⏰ 鬧鐘</div>
         <ul class="help-list">
           <li><b>班別連動：</b>勾選對應班別，僅輪值當天/前一天響鈴。</li>
-          <li><b>持續響鈴：</b>鬧鐘時間到時將自動響鈴並跳出畫面，點擊「關閉鬧鐘鈴聲」按鈕停止。</li>
+          <li><b>休眠通知：</b>即使手機休眠或在背景，時間到也會透過系統鬧鐘頻道發出聲音，點擊通知或開啟即可關閉。</li>
         </ul>
       </div>
     </div>
@@ -874,7 +874,6 @@ function previewAlarmSound() {
   
   playAlarmSound(soundType);
   
-  // 播放約 2 秒後自動停止試聽
   previewTimeout = setTimeout(function() {
     stopAlarmSoundOnly();
   }, 2000);
@@ -985,6 +984,103 @@ function stopAlarm() {
   stopAlarmSoundOnly();
 }
 // ---------------------------------------------------------------------------------
+
+// 原生背景排程（確保手機休眠時能喚醒並通知）
+async function requestNativeNotificationPermission() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+    } catch (e) {
+      console.log("Permission error:", e);
+    }
+  }
+}
+
+async function syncNativeAlarms() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    var Plugin = window.Capacitor.Plugins.LocalNotifications;
+    try {
+      var pending = await Plugin.getPending();
+      if (pending.notifications && pending.notifications.length > 0) {
+        await Plugin.cancel(pending);
+      }
+      
+      if (Plugin.createChannel) {
+        await Plugin.createChannel({
+          id: 'alarm_channel',
+          name: '值班鬧鐘',
+          description: '值班提醒鬧鐘專用管道',
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+          sound: 'res_platform_default'
+        });
+      }
+      
+      var now = new Date();
+      var notificationsToSchedule = [];
+
+      alarms.forEach(function(a) {
+        if (!a.enabled) return;
+        var parts = a.time.split(':');
+        var hours = parseInt(parts[0], 10);
+        var minutes = parseInt(parts[1], 10);
+        var advanceDays = parseInt(a.timing || 0, 10);
+
+        for (var i = 0; i < 30; i++) {
+          var targetDate = new Date();
+          targetDate.setDate(now.getDate() + i);
+          targetDate.setHours(hours, minutes, 0, 0);
+
+          if (targetDate > now) {
+            var checkDate = new Date(targetDate);
+            if (advanceDays > 0) {
+              checkDate.setDate(checkDate.getDate() + advanceDays);
+            }
+
+            var shiftName = getShiftNameForDate(checkDate);
+
+            if (a.shifts.includes(shiftName)) {
+              var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
+              
+              notificationsToSchedule.push({
+                title: "⏰ " + a.title,
+                body: timingDesc + "[" + shiftName + "] 時間已到！點擊開啟畫面。",
+                id: Math.floor(Math.random() * 2147483647),
+                channelId: 'alarm_channel',
+                sound: 'res_platform_default',
+                schedule: { 
+                  at: targetDate,
+                  allowWhileIdle: true,
+                  exact: true
+                },
+                extra: { title: a.title, shiftName: shiftName, soundType: a.sound }
+              });
+            }
+          }
+        }
+      });
+
+      if (notificationsToSchedule.length > 0) {
+        await Plugin.schedule({ notifications: notificationsToSchedule });
+      }
+    } catch (e) {
+      console.log("Sync native alarms error:", e);
+    }
+  }
+}
+
+function initNativeListeners() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    var Plugin = window.Capacitor.Plugins.LocalNotifications;
+    Plugin.addListener('localNotificationActionPerformed', function(notification) {
+      var extra = notification.notification.extra;
+      if (extra) {
+        triggerAlarmModal(extra.title, extra.shiftName, extra.soundType);
+      }
+    });
+  }
+}
 
 function checkAlarmsRealtime() {
   var now = new Date();
@@ -1237,6 +1333,7 @@ function selectShift(shiftName) {
   localStorage.setItem('selectedShift', shiftName);
   updateShiftButtonsUI();
   updateCalendar();
+  syncNativeAlarms();
 }
 
 function updateShiftButtonsUI() {
@@ -1562,9 +1659,12 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
+  syncNativeAlarms(); // 同步到系統背景鬧鐘排程
 }
 
 function addAlarm() {
+  requestNativeNotificationPermission();
+  
   var timeVal = document.getElementById('newAlarmTime').value;
   var titleVal = document.getElementById('newAlarmTitle').value.trim() || '值班鬧鐘';
   var soundVal = document.getElementById('newAlarmSound').value;
@@ -1659,6 +1759,9 @@ window.onresize = function() {
 };
 
 window.onload = function() {
+  requestNativeNotificationPermission();
+  initNativeListeners();
+  
   var tbody = document.getElementById("calBody");
   var html = "";
   var cellIdx = 0;
@@ -1697,7 +1800,13 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
+  // App 開啟時的即時比對
   setInterval(checkAlarmsRealtime, 1000);
+
+  // 初始化同步背景鬧鐘排程
+  setTimeout(function() {
+    syncNativeAlarms();
+  }, 1000);
 };
 </script>
 </body>
