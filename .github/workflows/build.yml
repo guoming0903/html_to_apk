@@ -45,7 +45,7 @@ jobs:
 
       # 6. 上傳生成的 APK 檔案作為 Artifact
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk # 依實際輸出路徑調整
