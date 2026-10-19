@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -405,13 +406,20 @@
     background: #ef4444;
     color: #ffffff;
     border: none;
-    font-size: 11pt;
+    font-size: 12pt;
     font-weight: bold;
-    padding: 10px 20px;
+    padding: 12px 20px;
     border-radius: 8px;
     width: 100%;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
   }
 
   .alarm-panel-container {
@@ -603,10 +611,10 @@
 
 <div id="alarmTriggerModal" class="modal-overlay">
   <div class="modal-card">
-    <div style="font-size: 28px; margin-bottom: 6px;">⏰</div>
-    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 12pt; color:#0f172a;">鬧鐘</div>
-    <div id="alarmTriggerDetail" style="font-size: 10pt; color:#64748b; margin-bottom: 16px;">班別時間到了！</div>
-    <button class="btn-stop-alarm" onclick="stopAlarm()">確認並關閉鬧鐘</button>
+    <div style="font-size: 32px; margin-bottom: 8px;">⏰</div>
+    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 14pt; color:#0f172a; margin-bottom: 4px;">鬧鐘響起</div>
+    <div id="alarmTriggerDetail" style="font-size: 11pt; color:#64748b; margin-bottom: 20px;">班別時間到了！</div>
+    <button class="btn-stop-alarm" onclick="stopAlarm()">關閉鬧鐘鈴聲</button>
   </div>
 </div>
 
@@ -741,6 +749,7 @@
         <div class="help-title">⏰ 鬧鐘</div>
         <ul class="help-list">
           <li><b>班別連動：</b>勾選對應班別，僅輪值當天/前一天響鈴。</li>
+          <li><b>持續響鈴：</b>鬧鐘響起時會持續循環播放，請點擊「關閉鬧鐘鈴聲」按鈕停止。</li>
         </ul>
       </div>
     </div>
@@ -783,7 +792,8 @@ var selectedDateKey = '';
 
 var alarms = JSON.parse(localStorage.getItem('shift_alarms') || '[]');
 var lastTriggeredMinute = '';
-var alarmInterval = null; // 鬧鐘循環播放計時器
+var alarmInterval = null; // 鬧鐘持續播放控制計時器
+var globalAudioCtx = null;
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -834,7 +844,6 @@ var lFtv = [
   "0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"
 ];
 
-// 關鍵修正 1：全面修正退出 App 邏輯
 function exitApp() {
   try {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
@@ -854,51 +863,87 @@ function exitApp() {
   }
 }
 
-// ----------------- Web Audio API 內建合成音效 -----------------
+// ----------------- Web Audio API 內建合成音效（修正為持續播放） -----------------
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   
-  function playOnce() {
+  function playCycle() {
     try {
-      var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+      if (!globalAudioCtx) {
+        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      var duration = 1.5; 
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      if (globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume();
+      }
+      
+      var now = globalAudioCtx.currentTime;
 
       if (type === 'beep') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        // 急促嗶嗶聲 (4 連嗶)
+        for (var i = 0; i < 4; i++) {
+          var osc = globalAudioCtx.createOscillator();
+          var gain = globalAudioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(880, now + i * 0.25);
+          gain.gain.setValueAtTime(0.8, now + i * 0.25);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
+          osc.connect(gain);
+          gain.connect(globalAudioCtx.destination);
+          osc.start(now + i * 0.25);
+          osc.stop(now + i * 0.25 + 0.15);
+        }
       } else if (type === 'chime') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+        // 經典三音階鐘聲
+        var notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach(function(freq, idx) {
+          var osc = globalAudioCtx.createOscillator();
+          var gain = globalAudioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.3);
+          gain.gain.setValueAtTime(0.7, now + idx * 0.3);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
+          osc.connect(gain);
+          gain.connect(globalAudioCtx.destination);
+          osc.start(now + idx * 0.3);
+          osc.stop(now + idx * 0.3 + 0.6);
+        });
       } else if (type === 'siren') {
+        // 警報掃頻聲
+        var osc = globalAudioCtx.createOscillator();
+        var gain = globalAudioCtx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.7);
-        osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 1.4);
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(900, now + 0.6);
+        osc.frequency.linearRampToValueAtTime(400, now + 1.2);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+        osc.connect(gain);
+        gain.connect(globalAudioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 1.2);
       } else { 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 1.5);
+        // 和弦 (Sunrise 升音階)
+        var chordNotes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+        chordNotes.forEach(function(freq, idx) {
+          var osc = globalAudioCtx.createOscillator();
+          var gain = globalAudioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.2);
+          gain.gain.setValueAtTime(0.6, now + idx * 0.2);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
+          osc.connect(gain);
+          gain.connect(globalAudioCtx.destination);
+          osc.start(now + idx * 0.2);
+          osc.stop(now + idx * 0.2 + 0.8);
+        });
       }
-
-      gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
     } catch(e) {
       console.error("Audio playback error:", e);
     }
   }
 
-  playOnce();
-  alarmInterval = setInterval(playOnce, 2000);
+  playCycle();
+  alarmInterval = setInterval(playCycle, 1500); // 每 1.5 秒循環播放，保持持續響鈴
 }
 
 function stopAlarmSoundOnly() {
@@ -921,7 +966,6 @@ function stopAlarm() {
 }
 // ---------------------------------------------------------------------------------
 
-// 關鍵修正 2：原生背景與鎖屏響鈴排程
 async function requestNativeNotificationPermission() {
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
     try {
@@ -980,10 +1024,10 @@ async function syncNativeAlarms() {
               
               notificationsToSchedule.push({
                 title: "⏰ " + a.title,
-                body: timingDesc + "[" + shiftName + "] 時間已到！請點擊確認。",
+                body: timingDesc + "[" + shiftName + "] 時間已到！點擊開啟畫面。",
                 id: Math.floor(Math.random() * 2147483647),
                 channelId: 'alarm_channel',
-                sound: 'res_platform_default', // 改為預設聲音，解決通知無聲問題
+                sound: 'res_platform_default',
                 schedule: { 
                   at: targetDate,
                   allowWhileIdle: true,
@@ -1016,7 +1060,6 @@ function initNativeListeners() {
     });
   }
 }
-// ---------------------------------------------------------------------------------
 
 function checkAlarmsRealtime() {
   var now = new Date();
@@ -1193,7 +1236,7 @@ function getCalendarData(y, m) {
            var targetCheckObj = extDays.find(function(item) { return item.sYear === d.sYear && item.sMonth === 4 && item.sDay === 4; });
            if (targetCheckObj && targetCheckObj.week === 4) {
               if(d.sDay === 4) { d.solarFestival += "兒童節 清明節 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
-              else if(d.sDay === 5) { d.solarFestival += "放假 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isMakeupHoliday = true; }
+              else if(d.sDay === 5) { d.solarFestival += "補假 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isMakeupHoliday = true; }
            } else {
               if(d.sDay === 3 || d.sDay === 4) { d.solarFestival += (d.sDay===3?"兒童節 ":"清明節 "); d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
            }
@@ -1647,15 +1690,15 @@ function deleteAlarm(id) {
 function renderAlarmList() {
   var listContainer = document.getElementById('alarmList');
   if (alarms.length === 0) {
-    listContainer.innerHTML = '';
+    listContainer.innerHTML = '<div style="color:#64748b; font-size:9pt; text-align:center; padding:12px;">尚無鬧鐘，請於上方新增。</div>';
     return;
   }
 
   var soundNames = {
-    'sunrise': '和弦',
-    'beep': '急促',
-    'chime': '鐘聲',
-    'siren': '警報'
+    'sunrise': '和弦 (Sunrise)',
+    'beep': '急促 (Beep)',
+    'chime': '鐘聲 (Chime)',
+    'siren': '警報 (Siren)'
   };
 
   var timingNames = {
