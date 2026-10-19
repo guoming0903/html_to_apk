@@ -834,12 +834,11 @@ var lFtv = [
   "0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"
 ];
 
+// 關鍵修正 1：全面修正退出 App 邏輯
 function exitApp() {
   try {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-      window.Capacitor.Plugins.App.exitApp().catch(function(err) {
-        console.log("App exit error: ", err);
-      });
+      window.Capacitor.Plugins.App.exitApp();
     } else if (navigator.app && typeof navigator.app.exitApp === 'function') {
       navigator.app.exitApp();
     } else if (navigator.device && typeof navigator.device.exitApp === 'function') {
@@ -850,12 +849,12 @@ function exitApp() {
       window.close();
     }
   } catch (e) {
-    console.error(e);
+    console.error("Exit App Error:", e);
     window.close();
   }
 }
 
-// ----------------- Web Audio API 內建合成音效（支援循環與確認關閉） -----------------
+// ----------------- Web Audio API 內建合成音效 -----------------
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   
@@ -922,7 +921,7 @@ function stopAlarm() {
 }
 // ---------------------------------------------------------------------------------
 
-// ----------------- Capacitor 原生排程（解決背景與休眠不響問題） -----------------
+// 關鍵修正 2：原生背景與鎖屏響鈴排程
 async function requestNativeNotificationPermission() {
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
     try {
@@ -949,7 +948,7 @@ async function syncNativeAlarms() {
           description: '值班提醒鬧鐘專用管道',
           importance: 5,
           visibility: 1,
-          vibration: false
+          vibration: true
         });
       }
       
@@ -984,7 +983,7 @@ async function syncNativeAlarms() {
                 body: timingDesc + "[" + shiftName + "] 時間已到！請點擊確認。",
                 id: Math.floor(Math.random() * 2147483647),
                 channelId: 'alarm_channel',
-                sound: null,
+                sound: 'res_platform_default', // 改為預設聲音，解決通知無聲問題
                 schedule: { 
                   at: targetDate,
                   allowWhileIdle: true,
@@ -1596,7 +1595,7 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
-  syncNativeAlarms(); // 儲存時自動同步到原生系統排程
+  syncNativeAlarms();
 }
 
 function addAlarm() {
@@ -1737,10 +1736,8 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
-  // 背景/前景實時比對計時器
   setInterval(checkAlarmsRealtime, 1000);
 
-  // 啟動時同步一次原生排程
   setTimeout(function() {
     syncNativeAlarms();
   }, 1000);
