@@ -1,56 +1,54 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+package com.convertisseur.apk;
 
-    <!-- 支援背景排程、精確鬧鐘與喚醒裝置的必要權限 -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import androidx.appcompat.app.AppCompatActivity;
 
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+public class MainActivity extends AppCompatActivity {
+    private WebView webView;
 
-        <activity
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // 初始化 WebView
+        webView = new WebView(this);
+        setContentView(webView);
 
-        <!-- 確保手機重新開機後，能自動恢復原本設定好的鬧鐘排程 -->
-        <receiver
-            android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
+        
+        // 關鍵修正 1：允許 WebView 不需手動互動即可播放音訊（解決鬧鐘無聲問題）
+        webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        <!-- 本地通知觸發接收器 -->
-        <receiver 
-            android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationCustomReceiver" 
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.capacitorjs.plugins.localnotifications.NOTIFICATION_TRIGGERED" />
-            </intent-filter>
-        </receiver>
+        webView.setWebViewClient(new WebViewClient());
 
-    </application>
+        // 關鍵修正 2：處理網頁端關閉視窗請求（解決按退出分頁無反應問題）
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onCloseWindow(WebView window) {
+                super.onCloseWindow(window);
+                finish(); // 關閉目前 Activity
+            }
+        });
 
-</manifest>
+        // 載入打包在 assets 中的 index.html
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    // 支援手機實體返回鍵上一頁功能
+    @Override
+    public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
