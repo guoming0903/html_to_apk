@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (原生背景鬧鐘版)</title>
+<title>月曆與值班工時統計 (網頁鬧鐘版)</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -696,7 +696,7 @@
             <option value="0">當天</option>
             <option value="1">前一天</option>
           </select>
-          <select id="newAlarmSound" style="flex:1;">
+          <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
             <option value="sunrise">和弦 (Sunrise)</option>
             <option value="beep">急促 (Beep)</option>
             <option value="chime">鐘聲 (Chime)</option>
@@ -749,7 +749,7 @@
         <div class="help-title">⏰ 鬧鐘</div>
         <ul class="help-list">
           <li><b>班別連動：</b>勾選對應班別，僅輪值當天/前一天響鈴。</li>
-          <li><b>持續響鈴：</b>鬧鐘響起時會持續循環播放，請點擊「關閉鬧鐘鈴聲」按鈕停止。</li>
+          <li><b>持續響鈴：</b>鬧鐘時間到時將自動響鈴並跳出畫面，點擊「關閉鬧鐘鈴聲」按鈕停止。</li>
         </ul>
       </div>
     </div>
@@ -792,8 +792,9 @@ var selectedDateKey = '';
 
 var alarms = JSON.parse(localStorage.getItem('shift_alarms') || '[]');
 var lastTriggeredMinute = '';
-var alarmInterval = null; // 鬧鐘持續播放控制計時器
+var alarmInterval = null; 
 var globalAudioCtx = null;
+var previewTimeout = null;
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -863,7 +864,22 @@ function exitApp() {
   }
 }
 
-// ----------------- Web Audio API 內建合成音效（修正為持續播放） -----------------
+// ----------------- Web Audio API 內建合成音效與切換預聽 -----------------
+function previewAlarmSound() {
+  var soundType = document.getElementById('newAlarmSound').value;
+  stopAlarmSoundOnly();
+  if (previewTimeout) {
+    clearTimeout(previewTimeout);
+  }
+  
+  playAlarmSound(soundType);
+  
+  // 播放約 2 秒後自動停止試聽
+  previewTimeout = setTimeout(function() {
+    stopAlarmSoundOnly();
+  }, 2000);
+}
+
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   
@@ -873,69 +889,13 @@ function playAlarmSound(type) {
         globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
       if (globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume();
-      }
-      
-      var now = globalAudioCtx.currentTime;
-
-      if (type === 'beep') {
-        // 急促嗶嗶聲 (4 連嗶)
-        for (var i = 0; i < 4; i++) {
-          var osc = globalAudioCtx.createOscillator();
-          var gain = globalAudioCtx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(880, now + i * 0.25);
-          gain.gain.setValueAtTime(0.8, now + i * 0.25);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
-          osc.connect(gain);
-          gain.connect(globalAudioCtx.destination);
-          osc.start(now + i * 0.25);
-          osc.stop(now + i * 0.25 + 0.15);
-        }
-      } else if (type === 'chime') {
-        // 經典三音階鐘聲
-        var notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-        notes.forEach(function(freq, idx) {
-          var osc = globalAudioCtx.createOscillator();
-          var gain = globalAudioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.3);
-          gain.gain.setValueAtTime(0.7, now + idx * 0.3);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
-          osc.connect(gain);
-          gain.connect(globalAudioCtx.destination);
-          osc.start(now + idx * 0.3);
-          osc.stop(now + idx * 0.3 + 0.6);
+        globalAudioCtx.resume().then(function() {
+          executeAudioNotes(type, globalAudioCtx);
+        }).catch(function(e) {
+          console.log("Audio resume failed:", e);
         });
-      } else if (type === 'siren') {
-        // 警報掃頻聲
-        var osc = globalAudioCtx.createOscillator();
-        var gain = globalAudioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(900, now + 0.6);
-        osc.frequency.linearRampToValueAtTime(400, now + 1.2);
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
-        osc.connect(gain);
-        gain.connect(globalAudioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 1.2);
-      } else { 
-        // 和弦 (Sunrise 升音階)
-        var chordNotes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
-        chordNotes.forEach(function(freq, idx) {
-          var osc = globalAudioCtx.createOscillator();
-          var gain = globalAudioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.2);
-          gain.gain.setValueAtTime(0.6, now + idx * 0.2);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
-          osc.connect(gain);
-          gain.connect(globalAudioCtx.destination);
-          osc.start(now + idx * 0.2);
-          osc.stop(now + idx * 0.2 + 0.8);
-        });
+      } else {
+        executeAudioNotes(type, globalAudioCtx);
       }
     } catch(e) {
       console.error("Audio playback error:", e);
@@ -943,7 +903,67 @@ function playAlarmSound(type) {
   }
 
   playCycle();
-  alarmInterval = setInterval(playCycle, 1500); // 每 1.5 秒循環播放，保持持續響鈴
+  alarmInterval = setInterval(playCycle, 1500); 
+}
+
+function executeAudioNotes(type, audioCtx) {
+  var now = audioCtx.currentTime;
+
+  if (type === 'beep') {
+    for (var i = 0; i < 4; i++) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now + i * 0.25);
+      gain.gain.setValueAtTime(0.8, now + i * 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + i * 0.25);
+      osc.stop(now + i * 0.25 + 0.15);
+    }
+  } else if (type === 'chime') {
+    var notes = [523.25, 659.25, 783.99]; 
+    notes.forEach(function(freq, idx) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.3);
+      gain.gain.setValueAtTime(0.7, now + idx * 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + idx * 0.3);
+      osc.stop(now + idx * 0.3 + 0.6);
+    });
+  } else if (type === 'siren') {
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.linearRampToValueAtTime(900, now + 0.6);
+    osc.frequency.linearRampToValueAtTime(400, now + 1.2);
+    gain.gain.setValueAtTime(0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 1.2);
+  } else { 
+    var chordNotes = [440, 554.37, 659.25, 880]; 
+    chordNotes.forEach(function(freq, idx) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.2);
+      gain.gain.setValueAtTime(0.6, now + idx * 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + idx * 0.2);
+      osc.stop(now + idx * 0.2 + 0.8);
+    });
+  }
 }
 
 function stopAlarmSoundOnly() {
@@ -965,101 +985,6 @@ function stopAlarm() {
   stopAlarmSoundOnly();
 }
 // ---------------------------------------------------------------------------------
-
-async function requestNativeNotificationPermission() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    try {
-      await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-    } catch (e) {
-      console.log("Permission error:", e);
-    }
-  }
-}
-
-async function syncNativeAlarms() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    var Plugin = window.Capacitor.Plugins.LocalNotifications;
-    try {
-      var pending = await Plugin.getPending();
-      if (pending.notifications && pending.notifications.length > 0) {
-        await Plugin.cancel(pending);
-      }
-      
-      if (Plugin.createChannel) {
-        await Plugin.createChannel({
-          id: 'alarm_channel',
-          name: '值班鬧鐘',
-          description: '值班提醒鬧鐘專用管道',
-          importance: 5,
-          visibility: 1,
-          vibration: true
-        });
-      }
-      
-      var now = new Date();
-      var notificationsToSchedule = [];
-
-      alarms.forEach(function(a) {
-        if (!a.enabled) return;
-        var parts = a.time.split(':');
-        var hours = parseInt(parts[0], 10);
-        var minutes = parseInt(parts[1], 10);
-        var advanceDays = parseInt(a.timing || 0, 10);
-
-        for (var i = 0; i < 30; i++) {
-          var targetDate = new Date();
-          targetDate.setDate(now.getDate() + i);
-          targetDate.setHours(hours, minutes, 0, 0);
-
-          if (targetDate > now) {
-            var checkDate = new Date(targetDate);
-            if (advanceDays > 0) {
-              checkDate.setDate(checkDate.getDate() + advanceDays);
-            }
-
-            var shiftName = getShiftNameForDate(checkDate);
-
-            if (a.shifts.includes(shiftName)) {
-              var timingDesc = advanceDays === 0 ? "當天班別：" : "前一天班別：";
-              
-              notificationsToSchedule.push({
-                title: "⏰ " + a.title,
-                body: timingDesc + "[" + shiftName + "] 時間已到！點擊開啟畫面。",
-                id: Math.floor(Math.random() * 2147483647),
-                channelId: 'alarm_channel',
-                sound: 'res_platform_default',
-                schedule: { 
-                  at: targetDate,
-                  allowWhileIdle: true,
-                  exact: true
-                },
-                extra: { title: a.title, shiftName: shiftName, soundType: a.sound }
-              });
-            }
-          }
-        }
-      });
-
-      if (notificationsToSchedule.length > 0) {
-        await Plugin.schedule({ notifications: notificationsToSchedule });
-      }
-    } catch (e) {
-      console.log("Sync native alarms error:", e);
-    }
-  }
-}
-
-function initNativeListeners() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    var Plugin = window.Capacitor.Plugins.LocalNotifications;
-    Plugin.addListener('localNotificationActionPerformed', function(notification) {
-      var extra = notification.notification.extra;
-      if (extra) {
-        triggerAlarmModal(extra.title, extra.shiftName, extra.soundType);
-      }
-    });
-  }
-}
 
 function checkAlarmsRealtime() {
   var now = new Date();
@@ -1312,7 +1237,6 @@ function selectShift(shiftName) {
   localStorage.setItem('selectedShift', shiftName);
   updateShiftButtonsUI();
   updateCalendar();
-  syncNativeAlarms();
 }
 
 function updateShiftButtonsUI() {
@@ -1638,12 +1562,9 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
-  syncNativeAlarms();
 }
 
 function addAlarm() {
-  requestNativeNotificationPermission();
-  
   var timeVal = document.getElementById('newAlarmTime').value;
   var titleVal = document.getElementById('newAlarmTitle').value.trim() || '值班鬧鐘';
   var soundVal = document.getElementById('newAlarmSound').value;
@@ -1738,9 +1659,6 @@ window.onresize = function() {
 };
 
 window.onload = function() {
-  requestNativeNotificationPermission();
-  initNativeListeners();
-  
   var tbody = document.getElementById("calBody");
   var html = "";
   var cellIdx = 0;
@@ -1780,11 +1698,8 @@ window.onload = function() {
   initSwipeGesture();
   
   setInterval(checkAlarmsRealtime, 1000);
-
-  setTimeout(function() {
-    syncNativeAlarms();
-  }, 1000);
 };
 </script>
 </body>
 </html>
+
