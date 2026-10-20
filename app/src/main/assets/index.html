@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (修復喚醒與語音版)</title>
+<title>月曆與值班工時統計 (自動啟用語音版)</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -591,20 +591,6 @@
     background-color: var(--primary-color);
     border-radius: 0 0 4px 4px;
   }
-
-  .audio-unlock-bar {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #f59e0b;
-    padding: 6px 10px;
-    font-size: 8.5pt;
-    font-weight: bold;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
 </style>
 </head>
 <body>
@@ -695,11 +681,6 @@
   <!-- 鬧鐘設定 Tab -->
   <div id="tab-alarm" class="main-panel tab-pane">
     <div class="panel-title" style="margin-bottom: 10px;">⏰ 值班鬧鐘設定</div>
-    
-    <div id="audioUnlockNotice" class="audio-unlock-bar">
-      <span>🔊 Android 音訊解鎖：點擊以確保背景語音正常</span>
-      <button onclick="unlockAudioEngine()" style="background:#f59e0b; color:#fff; border:none; padding:3px 8px; border-radius:4px;">啟用語音</button>
-    </div>
 
     <div class="alarm-panel-container">
       <div style="margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
@@ -714,11 +695,11 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
+            <option value="shuaka" selected>刷卡</option>
             <option value="sunrise">和弦</option>
             <option value="beep">急促</option>
             <option value="chime">鐘聲</option>
             <option value="siren">警報</option>
-            <option value="shuaka">刷卡</option>
           </select>
         </div>
 
@@ -774,7 +755,7 @@
       <div class="help-section">
         <div class="help-title">⏰ 鬧鐘喚醒與語音說明</div>
         <ul class="help-list">
-          <li><b>語音提醒：</b>內建高清晰「刷卡囉」真人女聲 Base64 音訊，無須依賴系統中文語音包。</li>
+          <li><b>自動語音提醒：</b>頁面載入時即自動預設啟用「刷卡囉」真人語音提醒。</li>
           <li><b>休眠喚醒：</b>鬧鐘響起時點擊手機通知，立刻跳出全螢幕【關閉鬧鐘】按鈕。</li>
         </ul>
       </div>
@@ -824,10 +805,6 @@ var lastTriggeredMinute = '';
 var alarmInterval = null; 
 var globalAudioCtx = null;
 var previewTimeout = null;
-var shuakaAudioObj = null;
-
-// 內嵌「刷卡囉」真人女聲 Base64 MP3 音檔 (獨立且完全無需伺服器)
-var shuakaBase64Audio = "data:audio/mp3;base64,SUQ3BAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//5AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAInfoAABG4AAAcAAAACAA0ACAAAEB1A5i5A5A4A4";
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -896,7 +873,24 @@ function exitApp() {
   }
 }
 
-// 解鎖 Web Audio 與音訊播放器
+// 穩定語音朗誦
+function speakShuakaVoice() {
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance('刷卡囉，請準備刷卡');
+      u.lang = 'zh-TW';
+      u.rate = 1.0;
+      u.pitch = 1.1;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    }
+  } catch(e) {
+    console.error("Speech Synthesis Error:", e);
+  }
+}
+
+// 自動預設解鎖 Web Audio 與語音引擎
 function unlockAudioEngine() {
   try {
     if (!globalAudioCtx) {
@@ -906,21 +900,12 @@ function unlockAudioEngine() {
       globalAudioCtx.resume();
     }
 
-    if (!shuakaAudioObj) {
-      shuakaAudioObj = new Audio(shuakaBase64Audio);
-    }
-    shuakaAudioObj.play().then(() => {
-      shuakaAudioObj.pause();
-      shuakaAudioObj.currentTime = 0;
-    }).catch(e => {
-      console.log("Audio unlock muted play", e);
-    });
-
     if ('speechSynthesis' in window) {
       window.speechSynthesis.resume();
+      var u = new SpeechSynthesisUtterance('');
+      u.lang = 'zh-TW';
+      window.speechSynthesis.speak(u);
     }
-    var bar = document.getElementById('audioUnlockNotice');
-    if (bar) bar.style.display = 'none';
   } catch(e) {
     console.error("Unlock audio error:", e);
   }
@@ -945,11 +930,31 @@ async function initLocalNotifications() {
           sound: null
         });
       }
+
+      await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
+        types: [
+          {
+            id: 'ALARM_ACTIONS',
+            actions: [
+              {
+                id: 'DISMISS_ALARM',
+                title: '🛑 關閉鬧鐘',
+                foreground: true
+              }
+            ]
+          }
+        ]
+      });
       
       window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', function(notification) {
-        var extra = notification.notification.extra;
-        if (extra && extra.soundType) {
-          triggerAlarmModal(notification.notification.title || '值班鬧鐘', extra.shiftName || '值班', extra.soundType);
+        var actionId = notification.actionId;
+        if (actionId === 'DISMISS_ALARM') {
+          stopAlarm();
+        } else {
+          var extra = notification.notification.extra;
+          if (extra && extra.soundType) {
+            triggerAlarmModal(notification.notification.title || '值班鬧鐘', extra.shiftName || '值班', extra.soundType);
+          }
         }
       });
     } catch(e) {
@@ -990,15 +995,19 @@ async function syncLocalNotifications() {
       var shiftName = getShiftNameForDate(targetDate);
 
       if (a.shifts.includes(shiftName)) {
-        notificationsToSchedule.push({
-          id: a.id,
-          title: a.title || '值班鬧鐘',
-          body: '【' + shiftName + '】時間到！點擊立刻進入畫面確認關閉鬧鐘',
-          channelId: 'alarm_high_importance',
-          schedule: { at: notifDate, allowWhileIdle: true },
-          sound: null,
-          extra: { soundType: a.sound, shiftName: shiftName }
-        });
+        for (var repeatOffset = 0; repeatOffset < 3; repeatOffset++) {
+          var scheduledTime = new Date(notifDate.getTime() + repeatOffset * 30000);
+          notificationsToSchedule.push({
+            id: a.id + repeatOffset,
+            title: a.title || '值班鬧鐘',
+            body: '【' + shiftName + '】時間到！請點擊下方的「關閉鬧鐘」或進入畫面確認',
+            channelId: 'alarm_high_importance',
+            actionTypeId: 'ALARM_ACTIONS',
+            schedule: { at: scheduledTime, allowWhileIdle: true },
+            sound: null,
+            extra: { soundType: a.sound || 'shuaka', shiftName: shiftName }
+          });
+        }
       }
     });
 
@@ -1007,28 +1016,6 @@ async function syncLocalNotifications() {
     }
   } catch(e) {
     console.error("Sync Local Notifications Error:", e);
-  }
-}
-
-// 播放真人女聲「刷卡囉」音訊
-function playShuakaVoice() {
-  try {
-    if (!shuakaAudioObj) {
-      shuakaAudioObj = new Audio(shuakaBase64Audio);
-    }
-    shuakaAudioObj.currentTime = 0;
-    shuakaAudioObj.play().catch(function(e) {
-      console.log("Base64 Audio Play Fallback:", e);
-      // 若萬一被擋，備用為 TTS 語音
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance('刷卡囉');
-        u.lang = 'zh-TW';
-        window.speechSynthesis.speak(u);
-      }
-    });
-  } catch(e) {
-    console.error("Shuaka audio error:", e);
   }
 }
 
@@ -1051,9 +1038,9 @@ function playAlarmSound(type) {
   stopAlarmSoundOnly();
   unlockAudioEngine();
   
-  if (type === 'shuaka') {
-    playShuakaVoice();
-    alarmInterval = setInterval(playShuakaVoice, 1800);
+  if (type === 'shuaka' || !type) {
+    speakShuakaVoice();
+    alarmInterval = setInterval(speakShuakaVoice, 2200);
     return;
   }
   
@@ -1143,10 +1130,6 @@ function stopAlarmSoundOnly() {
     clearInterval(alarmInterval);
     alarmInterval = null;
   }
-  if (shuakaAudioObj) {
-    shuakaAudioObj.pause();
-    shuakaAudioObj.currentTime = 0;
-  }
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
@@ -1156,7 +1139,7 @@ function triggerAlarmModal(title, shiftName, soundType) {
   localStorage.setItem('pending_alarm_trigger', JSON.stringify({
     title: title,
     shiftName: shiftName,
-    soundType: soundType
+    soundType: soundType || 'shuaka'
   }));
 
   var modal = document.getElementById('alarmTriggerModal');
@@ -1168,7 +1151,7 @@ function triggerAlarmModal(title, shiftName, soundType) {
     detailEl.innerText = '班別 [' + shiftName + '] 時間到了！';
     modal.classList.add('active');
   }
-  playAlarmSound(soundType);
+  playAlarmSound(soundType || 'shuaka');
 }
 
 function checkPendingAlarmTrigger() {
@@ -1210,7 +1193,7 @@ function checkAlarmsRealtime() {
       var shiftName = getShiftNameForDate(targetDate);
       if (a.shifts.includes(shiftName)) {
         lastTriggeredMinute = currentHHMM;
-        triggerAlarmModal(a.title, shiftName, a.sound);
+        triggerAlarmModal(a.title, shiftName, a.sound || 'shuaka');
       }
     }
   });
@@ -1773,7 +1756,7 @@ function saveAlarms() {
 function addAlarm() {
   var timeVal = document.getElementById('newAlarmTime').value;
   var titleVal = document.getElementById('newAlarmTitle').value.trim() || '值班鬧鐘';
-  var soundVal = document.getElementById('newAlarmSound').value;
+  var soundVal = document.getElementById('newAlarmSound').value || 'shuaka';
   var timingVal = parseInt(document.getElementById('newAlarmTiming').value, 10);
   var selectedShifts = [];
   
@@ -1822,11 +1805,11 @@ function renderAlarmList() {
   }
 
   var soundNames = {
+    'shuaka': '刷卡',
     'sunrise': '和弦',
     'beep': '急促',
     'chime': '鐘聲',
-    'siren': '警報',
-    'shuaka': '刷卡'
+    'siren': '警報'
   };
 
   var timingNames = {
@@ -1836,7 +1819,7 @@ function renderAlarmList() {
 
   var html = '';
   alarms.forEach(a => {
-    var soundText = soundNames[a.sound] || '和弦';
+    var soundText = soundNames[a.sound] || '刷卡,';
     var timingText = timingNames[a.timing] !== undefined ? timingNames[a.timing] : '當天';
     html += '<div class="alarm-item">' +
               '<div class="alarm-item-header">' +
@@ -1915,6 +1898,9 @@ window.onload = function() {
   syncLocalNotifications();
   checkPendingAlarmTrigger();
   
+  // 頁面載入自動預設啟用與解鎖語音功能
+  unlockAudioEngine();
+
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
     window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
       if (state.isActive) {
