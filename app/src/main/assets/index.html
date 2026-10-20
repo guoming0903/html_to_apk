@@ -487,14 +487,6 @@
     font-size: 9pt;
   }
 
-  .shift-checkbox-group {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    font-size: 8.5pt;
-    margin-top: 4px;
-  }
-
   .switch {
     position: relative;
     display: inline-block;
@@ -704,17 +696,29 @@
             <option value="shuaka">刷卡</option>
           </select>
         </div>
-        <div class="shift-checkbox-group" id="newAlarmShifts">
-          <label><input type="checkbox" value="一值1" checked> 一值1</label>
-          <label><input type="checkbox" value="一值2" checked> 一值2</label>
-          <label><input type="checkbox" value="一值3" checked> 一值3</label>
-          <label><input type="checkbox" value="二值1" checked> 二值1</label>
-          <label><input type="checkbox" value="二值2" checked> 二值2</label>
-          <label><input type="checkbox" value="二值3" checked> 二值3</label>
-          <label><input type="checkbox" value="三值1" checked> 三值1</label>
-          <label><input type="checkbox" value="三值2" checked> 三值2</label>
-          <label><input type="checkbox" value="三值3" checked> 三值3</label>
+
+        <!-- 班別勾選分成三列（一值、二值、三值） -->
+        <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:4px; font-size:8.5pt; text-align:left; margin-top:4px;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <span style="font-weight:bold; width:32px; color:#475569;">一值:</span>
+            <label><input type="checkbox" value="一值1" checked> 1</label>
+            <label><input type="checkbox" value="一值2" checked> 2</label>
+            <label><input type="checkbox" value="一值3" checked> 3</label>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <span style="font-weight:bold; width:32px; color:#475569;">二值:</span>
+            <label><input type="checkbox" value="二值1" checked> 1</label>
+            <label><input type="checkbox" value="二值2" checked> 2</label>
+            <label><input type="checkbox" value="二值3" checked> 3</label>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <span style="font-weight:bold; width:32px; color:#475569;">三值:</span>
+            <label><input type="checkbox" value="三值1" checked> 1</label>
+            <label><input type="checkbox" value="三值2" checked> 2</label>
+            <label><input type="checkbox" value="三值3" checked> 3</label>
+          </div>
         </div>
+
         <button class="btn-save" style="margin-top:8px; width:100%; padding:6px; font-weight:bold; font-size:9pt;" onclick="addAlarm()">加入鬧鐘</button>
       </div>
 
@@ -741,7 +745,7 @@
         <div class="help-title">📊 工時</div>
         <ul class="help-list">
           <li><b>切換月份：</b>左右滑動此頁面或由主頁下拉選單切換月份。</li>
-          <li><b>時數計算：</b>自動加總出勤時數扣减國定假日。</li>
+          <li><b>時數計算：</b>自動加總出勤時數，國定假日自動扣減。</li>
           <li><b>差異與交接：</b>自動採計辦公時數差異與交接時數。</li>
         </ul>
       </div>
@@ -758,8 +762,12 @@
 </div>
 
 <div class="app-nav">
+  <!-- 月曆分頁圖示改為動態顯示今天日期 -->
   <div class="nav-item active" onclick="switchTab('calendar', this)">
-    <span class="nav-icon">📅</span>
+    <div class="nav-icon" style="position: relative; width: 22px; height: 22px; background: #ffffff; border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; border: 1.5px solid currentColor; margin: 0 auto 2px auto;">
+      <div id="navBadgeMonth" style="background: var(--primary-color); color: white; height: 7px; line-height: 7px; font-size: 5px; font-weight: bold;">月</div>
+      <div id="navBadgeDay" style="flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; color: var(--text-main);">--</div>
+    </div>
     <span>月曆</span>
   </div>
   <div class="nav-item" onclick="switchTab('stats', this)">
@@ -819,7 +827,7 @@ var lunarInfo = [
   0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
   0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
   0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
-  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,1b255,0x06d20,0x0ada0,
   0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aaef,
   0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
   0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
@@ -874,7 +882,6 @@ async function initLocalNotifications() {
         await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
       }
       
-      // 監聽點擊通知事件
       window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', function(notification) {
         var extra = notification.notification.extra;
         if (extra && extra.soundType) {
@@ -891,7 +898,6 @@ async function syncLocalNotifications() {
   if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.LocalNotifications) return;
   var LN = window.Capacitor.Plugins.LocalNotifications;
   try {
-    // 每次更新鬧鐘時，先清空所有排程通知
     const pending = await LN.getPending();
     if (pending && pending.notifications && pending.notifications.length > 0) {
       await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
@@ -901,7 +907,6 @@ async function syncLocalNotifications() {
     var now = new Date();
 
     alarms.forEach(function(a) {
-      // 嚴格檢查：若鬧鐘已關閉，則絕對不排程！
       if (!a.enabled) return;
 
       var parts = a.time.split(':');
@@ -920,7 +925,6 @@ async function syncLocalNotifications() {
       }
       var shiftName = getShiftNameForDate(targetDate);
 
-      // 檢查是否符合該班別
       if (a.shifts.includes(shiftName)) {
         notificationsToSchedule.push({
           id: a.id,
@@ -942,7 +946,35 @@ async function syncLocalNotifications() {
 }
 // ---------------------------------------------------------------------------------
 
-// ----------------- Web Audio API 內建合成音效與「刷卡」女聲 -----------------
+// ----------------- 語音合成與音效播放 -----------------
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = function() {
+      window.speechSynthesis.getVoices();
+    };
+  }
+}
+
+function playShuakaVoice() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance('刷卡囉');
+    utterance.lang = 'zh-TW';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.2; // 女聲效果
+    
+    var voices = window.speechSynthesis.getVoices();
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang.includes('zh') || voices[i].lang.includes('cmn') || voices[i].lang.includes('TW')) {
+        utterance.voice = voices[i];
+        break;
+      }
+    }
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 function previewAlarmSound() {
   var soundType = document.getElementById('newAlarmSound').value;
   stopAlarmSoundOnly();
@@ -955,17 +987,6 @@ function previewAlarmSound() {
   previewTimeout = setTimeout(function() {
     stopAlarmSoundOnly();
   }, 2500);
-}
-
-function playShuakaVoice() {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    var utterance = new SpeechSynthesisUtterance('刷卡囉');
-    utterance.lang = 'zh-TW';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.3; // 稍微調高音調呈現女聲效果
-    window.speechSynthesis.speak(utterance);
-  }
 }
 
 function playAlarmSound(type) {
@@ -1071,13 +1092,41 @@ function stopAlarmSoundOnly() {
 }
 
 function triggerAlarmModal(title, shiftName, soundType) {
-  document.getElementById('alarmTriggerTitle').innerText = title;
-  document.getElementById('alarmTriggerDetail').innerText = '班別 [' + shiftName + '] 時間已到！';
-  document.getElementById('alarmTriggerModal').classList.add('active');
+  localStorage.setItem('pending_alarm_trigger', JSON.stringify({
+    title: title,
+    shiftName: shiftName,
+    soundType: soundType
+  }));
+
+  var modal = document.getElementById('alarmTriggerModal');
+  var titleEl = document.getElementById('alarmTriggerTitle');
+  var detailEl = document.getElementById('alarmTriggerDetail');
+  
+  if (modal && titleEl && detailEl) {
+    titleEl.innerText = title;
+    detailEl.innerText = '班別 [' + shiftName + '] 時間已到！';
+    modal.classList.add('active');
+  }
   playAlarmSound(soundType);
 }
 
+function checkPendingAlarmTrigger() {
+  var pending = localStorage.getItem('pending_alarm_trigger');
+  if (pending) {
+    try {
+      var data = JSON.parse(pending);
+      localStorage.removeItem('pending_alarm_trigger');
+      setTimeout(function() {
+        triggerAlarmModal(data.title, data.shiftName, data.soundType);
+      }, 300);
+    } catch(e) {
+      console.error("Check pending alarm error:", e);
+    }
+  }
+}
+
 function stopAlarm() {
+  localStorage.removeItem('pending_alarm_trigger');
   document.getElementById('alarmTriggerModal').classList.remove('active');
   stopAlarmSoundOnly();
 }
@@ -1092,7 +1141,7 @@ function checkAlarmsRealtime() {
   if (currentHHMM === lastTriggeredMinute) return;
 
   alarms.forEach(function(a) {
-    if (!a.enabled) return; // 略過已關閉的鬧鐘
+    if (!a.enabled) return;
     if (a.time === currentHHMM) {
       var advanceDays = parseInt(a.timing || 0, 10);
       var targetDate = new Date(now);
@@ -1659,7 +1708,7 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
-  syncLocalNotifications(); // 同步原生背景排程
+  syncLocalNotifications();
 }
 
 function addAlarm() {
@@ -1758,6 +1807,14 @@ window.onresize = function() {
 };
 
 window.onload = function() {
+  // 動態設定底部月曆圖示為當天日期
+  var badgeMonthEl = document.getElementById("navBadgeMonth");
+  var badgeDayEl = document.getElementById("navBadgeDay");
+  if (badgeMonthEl && badgeDayEl) {
+    badgeMonthEl.innerText = (tM + 1) + '月';
+    badgeDayEl.innerText = tD;
+  }
+
   var tbody = document.getElementById("calBody");
   var html = "";
   var cellIdx = 0;
@@ -1796,11 +1853,18 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
-  // 初始化原生背景通知與權限
   initLocalNotifications();
   syncLocalNotifications();
+  checkPendingAlarmTrigger();
   
-  // 每秒即時比對鬧鐘時間（App在前景時運作）
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
+      if (state.isActive) {
+        checkPendingAlarmTrigger();
+      }
+    });
+  }
+  
   setInterval(checkAlarmsRealtime, 1000);
 };
 </script>
