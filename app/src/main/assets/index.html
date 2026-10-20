@@ -697,10 +697,11 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
-            <option value="sunrise">和弦 (Sunrise)</option>
-            <option value="beep">急促 (Beep)</option>
-            <option value="chime">鐘聲 (Chime)</option>
-            <option value="siren">警報 (Siren)</option>
+            <option value="sunrise">和弦</option>
+            <option value="beep">急促</option>
+            <option value="chime">鐘聲</option>
+            <option value="siren">警報</option>
+            <option value="shuaka">刷卡</option>
           </select>
         </div>
         <div class="shift-checkbox-group" id="newAlarmShifts">
@@ -740,7 +741,7 @@
         <div class="help-title">📊 工時</div>
         <ul class="help-list">
           <li><b>切換月份：</b>左右滑動此頁面或由主頁下拉選單切換月份。</li>
-          <li><b>時數計算：</b>自動加總出勤時數，國定假日自動扣減。</li>
+          <li><b>時數計算：</b>自動加總出勤時數扣减國定假日。</li>
           <li><b>差異與交接：</b>自動採計辦公時數差異與交接時數。</li>
         </ul>
       </div>
@@ -864,7 +865,84 @@ function exitApp() {
   }
 }
 
-// ----------------- Web Audio API 內建合成音效與切換預聽 -----------------
+// ----------------- Capacitor 本地通知與背景排程整合 -----------------
+async function initLocalNotifications() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      const perm = await window.Capacitor.Plugins.LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') {
+        await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+      }
+      
+      // 監聽點擊通知事件
+      window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', function(notification) {
+        var extra = notification.notification.extra;
+        if (extra && extra.soundType) {
+          triggerAlarmModal(notification.notification.title || '值班鬧鐘', extra.shiftName || '值班', extra.soundType);
+        }
+      });
+    } catch(e) {
+      console.log("LocalNotifications Init Error:", e);
+    }
+  }
+}
+
+async function syncLocalNotifications() {
+  if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.LocalNotifications) return;
+  var LN = window.Capacitor.Plugins.LocalNotifications;
+  try {
+    // 每次更新鬧鐘時，先清空所有排程通知
+    const pending = await LN.getPending();
+    if (pending && pending.notifications && pending.notifications.length > 0) {
+      await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    }
+
+    var notificationsToSchedule = [];
+    var now = new Date();
+
+    alarms.forEach(function(a) {
+      // 嚴格檢查：若鬧鐘已關閉，則絕對不排程！
+      if (!a.enabled) return;
+
+      var parts = a.time.split(':');
+      var hour = parseInt(parts[0], 10);
+      var minute = parseInt(parts[1], 10);
+
+      var notifDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+      if (notifDate <= now) {
+        notifDate.setDate(notifDate.getDate() + 1);
+      }
+
+      var advanceDays = parseInt(a.timing || 0, 10);
+      var targetDate = new Date(notifDate);
+      if (advanceDays > 0) {
+        targetDate.setDate(targetDate.getDate() + advanceDays);
+      }
+      var shiftName = getShiftNameForDate(targetDate);
+
+      // 檢查是否符合該班別
+      if (a.shifts.includes(shiftName)) {
+        notificationsToSchedule.push({
+          id: a.id,
+          title: a.title || '值班鬧鐘',
+          body: '班別 [' + shiftName + '] 時間已到！點擊開啟App關閉鬧鐘。',
+          schedule: { at: notifDate, allowWhileIdle: true },
+          sound: null,
+          extra: { soundType: a.sound, shiftName: shiftName }
+        });
+      }
+    });
+
+    if (notificationsToSchedule.length > 0) {
+      await LN.schedule({ notifications: notificationsToSchedule });
+    }
+  } catch(e) {
+    console.error("Sync Local Notifications Error:", e);
+  }
+}
+// ---------------------------------------------------------------------------------
+
+// ----------------- Web Audio API 內建合成音效與「刷卡」女聲 -----------------
 function previewAlarmSound() {
   var soundType = document.getElementById('newAlarmSound').value;
   stopAlarmSoundOnly();
@@ -876,11 +954,28 @@ function previewAlarmSound() {
   
   previewTimeout = setTimeout(function() {
     stopAlarmSoundOnly();
-  }, 2000);
+  }, 2500);
+}
+
+function playShuakaVoice() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance('刷卡囉');
+    utterance.lang = 'zh-TW';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.3; // 稍微調高音調呈現女聲效果
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
+  
+  if (type === 'shuaka') {
+    playShuakaVoice();
+    alarmInterval = setInterval(playShuakaVoice, 2000);
+    return;
+  }
   
   function playCycle() {
     try {
@@ -970,6 +1065,9 @@ function stopAlarmSoundOnly() {
     clearInterval(alarmInterval);
     alarmInterval = null;
   }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 function triggerAlarmModal(title, shiftName, soundType) {
@@ -994,7 +1092,7 @@ function checkAlarmsRealtime() {
   if (currentHHMM === lastTriggeredMinute) return;
 
   alarms.forEach(function(a) {
-    if (!a.enabled) return;
+    if (!a.enabled) return; // 略過已關閉的鬧鐘
     if (a.time === currentHHMM) {
       var advanceDays = parseInt(a.timing || 0, 10);
       var targetDate = new Date(now);
@@ -1561,6 +1659,7 @@ function switchTab(tabName, el) {
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
+  syncLocalNotifications(); // 同步原生背景排程
 }
 
 function addAlarm() {
@@ -1615,10 +1714,11 @@ function renderAlarmList() {
   }
 
   var soundNames = {
-    'sunrise': '和弦 (Sunrise)',
-    'beep': '急促 (Beep)',
-    'chime': '鐘聲 (Chime)',
-    'siren': '警報 (Siren)'
+    'sunrise': '和弦',
+    'beep': '急促',
+    'chime': '鐘聲',
+    'siren': '警報',
+    'shuaka': '刷卡'
   };
 
   var timingNames = {
@@ -1696,7 +1796,11 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
-  // 每秒即時比對鬧鐘時間，時間到直接響鈴與跳窗
+  // 初始化原生背景通知與權限
+  initLocalNotifications();
+  syncLocalNotifications();
+  
+  // 每秒即時比對鬧鐘時間（App在前景時運作）
   setInterval(checkAlarmsRealtime, 1000);
 };
 </script>
