@@ -356,13 +356,18 @@
 
   .modal-overlay.active { display: flex; }
 
+  /* 強制將鬧鐘響鈴彈窗置於最上層，絕不被覆蓋 */
+  #alarmTriggerModal {
+    z-index: 99999 !important;
+  }
+
   .modal-card {
     background: #fff;
     width: 90%;
     max-width: 440px;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     text-align: center;
   }
 
@@ -408,17 +413,17 @@
     border: none;
     font-size: 12pt;
     font-weight: bold;
-    padding: 12px 20px;
+    padding: 14px 20px;
     border-radius: 8px;
     width: 100%;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
     animation: pulse 1.5s infinite;
   }
 
   @keyframes pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+    50% { transform: scale(1.03); }
     100% { transform: scale(1); }
   }
 
@@ -601,11 +606,12 @@
   </div>
 </div>
 
+<!-- 鬧鐘響起彈窗：設定 z-index 為 99999 確保在最前方 -->
 <div id="alarmTriggerModal" class="modal-overlay">
   <div class="modal-card">
-    <div style="font-size: 32px; margin-bottom: 8px;">⏰</div>
-    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 14pt; color:#0f172a; margin-bottom: 4px;">鬧鐘響起</div>
-    <div id="alarmTriggerDetail" style="font-size: 11pt; color:#64748b; margin-bottom: 20px;">班別時間到了！</div>
+    <div style="font-size: 36px; margin-bottom: 8px;">⏰</div>
+    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 15pt; color:#0f172a; margin-bottom: 4px;">鬧鐘響起</div>
+    <div id="alarmTriggerDetail" style="font-size: 11pt; color:#64748b; margin-bottom: 20px; font-weight: bold;">班別時間到了！</div>
     <button class="btn-stop-alarm" onclick="stopAlarm()">關閉鬧鐘鈴聲</button>
   </div>
 </div>
@@ -689,33 +695,34 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
-            <option value="sunrise">和弦</option>
-            <option value="beep">急促</option>
-            <option value="chime">鐘聲</option>
-            <option value="siren">警報</option>
-            <option value="shuaka">刷卡</option>
+            <option value="sunrise">和弦 (Sunrise)</option>
+            <option value="beep">急促 (Beep)</option>
+            <option value="chime">鐘聲 (Chime)</option>
+            <option value="siren">警報 (Siren)</option>
+            <option value="shuaka">刷卡 (女聲：刷卡囉 + 逼逼聲)</option>
           </select>
         </div>
 
-        <!-- 班別勾選分成三列（一值、二值、三值） -->
-        <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:4px; font-size:8.5pt; text-align:left; margin-top:4px;">
-          <div style="display:flex; gap:6px; align-items:center;">
+        <!-- 鬧鐘值別選擇：三列依序一值、二值、三值 -->
+        <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:5px; font-size:8.5pt; text-align:left; margin-top:6px; background:#f8fafc; padding:6px; border-radius:6px; border:1px solid var(--border-color);">
+          <div style="font-weight:bold; color:#475569; margin-bottom:2px;">勾選適用班別：</div>
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <span style="font-weight:bold; width:32px; color:#475569;">一值:</span>
-            <label><input type="checkbox" value="一值1" checked> 1</label>
-            <label><input type="checkbox" value="一值2" checked> 2</label>
-            <label><input type="checkbox" value="一值3" checked> 3</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="一值1" checked> 一值1</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="一值2" checked> 一值2</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="一值3" checked> 一值3</label>
           </div>
-          <div style="display:flex; gap:6px; align-items:center;">
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <span style="font-weight:bold; width:32px; color:#475569;">二值:</span>
-            <label><input type="checkbox" value="二值1" checked> 1</label>
-            <label><input type="checkbox" value="二值2" checked> 2</label>
-            <label><input type="checkbox" value="二值3" checked> 3</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="二值1" checked> 二值1</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="二值2" checked> 二值2</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="二值3" checked> 二值3</label>
           </div>
-          <div style="display:flex; gap:6px; align-items:center;">
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <span style="font-weight:bold; width:32px; color:#475569;">三值:</span>
-            <label><input type="checkbox" value="三值1" checked> 1</label>
-            <label><input type="checkbox" value="三值2" checked> 2</label>
-            <label><input type="checkbox" value="三值3" checked> 3</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="三值1" checked> 三值1</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="三值2" checked> 三值2</label>
+            <label style="cursor:pointer;"><input type="checkbox" value="三值3" checked> 三值3</label>
           </div>
         </div>
 
@@ -808,8 +815,7 @@ var previewTimeout = null;
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
   "二值1": 8, "二值2": 8, "二值3": 6.5,
-  "三值1": 8.5, "三值2": 7, "三值3": 7,
-  "大空1": 0, "大空2": 0, "小空1": 0
+  "三值1": 8.5, "三值2": 7, "三值3": 7
 };
 
 var lunarInfo = [
@@ -946,7 +952,7 @@ async function syncLocalNotifications() {
 }
 // ---------------------------------------------------------------------------------
 
-// ----------------- 語音合成與音效播放 -----------------
+// ----------------- 語音合成與音效播放 (刷卡結合女聲與高音質逼逼聲) -----------------
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
   if (window.speechSynthesis.onvoiceschanged !== undefined) {
@@ -957,12 +963,14 @@ if ('speechSynthesis' in window) {
 }
 
 function playShuakaVoice() {
+  // 1. 播放女聲「刷卡囉」
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance('刷卡囉');
     utterance.lang = 'zh-TW';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.2; // 女聲效果
+    utterance.rate = 1.05; 
+    utterance.pitch = 1.3; // 清亮女聲
+    utterance.volume = 1.0; // 最大語音音量
     
     var voices = window.speechSynthesis.getVoices();
     for (var i = 0; i < voices.length; i++) {
@@ -972,6 +980,31 @@ function playShuakaVoice() {
       }
     }
     window.speechSynthesis.speak(utterance);
+  }
+
+  // 2. 同步發出超清晰的 POS 機高音質逼逼雙音軌提示音，確保絕對大聲與醒目
+  try {
+    if (!globalAudioCtx) {
+      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') {
+      globalAudioCtx.resume();
+    }
+    var now = globalAudioCtx.currentTime;
+    [0, 0.12].forEach(function(timeOffset, idx) {
+      var osc = globalAudioCtx.createOscillator();
+      var gain = globalAudioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(idx === 0 ? 1046.50 : 1318.51, now + timeOffset);
+      gain.gain.setValueAtTime(0.9, now + timeOffset); // 高音量
+      gain.gain.exponentialRampToValueAtTime(0.001, now + timeOffset + 0.1);
+      osc.connect(gain);
+      gain.connect(globalAudioCtx.destination);
+      osc.start(now + timeOffset);
+      osc.stop(now + timeOffset + 0.1);
+    });
+  } catch(e) {
+    console.error("Shuaka dual sound error:", e);
   }
 }
 
@@ -1030,7 +1063,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'square';
       osc.frequency.setValueAtTime(880, now + i * 0.25);
-      gain.gain.setValueAtTime(0.8, now + i * 0.25);
+      gain.gain.setValueAtTime(1.2, now + i * 0.25); // 提高 50% 音量
       gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1044,7 +1077,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.3);
-      gain.gain.setValueAtTime(0.7, now + idx * 0.3);
+      gain.gain.setValueAtTime(1.05, now + idx * 0.3); // 提高 50% 音量
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1058,7 +1091,7 @@ function executeAudioNotes(type, audioCtx) {
     osc.frequency.setValueAtTime(400, now);
     osc.frequency.linearRampToValueAtTime(900, now + 0.6);
     osc.frequency.linearRampToValueAtTime(400, now + 1.2);
-    gain.gain.setValueAtTime(0.6, now);
+    gain.gain.setValueAtTime(0.9, now); // 提高 50% 音量
     gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -1071,7 +1104,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + idx * 0.2);
-      gain.gain.setValueAtTime(0.6, now + idx * 0.2);
+      gain.gain.setValueAtTime(0.9, now + idx * 0.2); // 提高 50% 音量
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1118,7 +1151,7 @@ function checkPendingAlarmTrigger() {
       localStorage.removeItem('pending_alarm_trigger');
       setTimeout(function() {
         triggerAlarmModal(data.title, data.shiftName, data.soundType);
-      }, 300);
+      }, 200);
     } catch(e) {
       console.error("Check pending alarm error:", e);
     }
@@ -1767,7 +1800,7 @@ function renderAlarmList() {
     'beep': '急促',
     'chime': '鐘聲',
     'siren': '警報',
-    'shuaka': '刷卡'
+    'shuaka': '刷卡 (女聲：刷卡囉 + 逼逼聲)'
   };
 
   var timingNames = {
@@ -1869,3 +1902,4 @@ window.onload = function() {
 </script>
 </body>
 </html>
+
