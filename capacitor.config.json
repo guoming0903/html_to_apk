@@ -1,6 +1,6 @@
 {
   "appId": "com.convertisseur.apk",
-  "appName": "值班萬年曆",
+  "appName": "值班表",
   "webDir": "app/src/main/assets",
   "bundledWebRuntime": false
 }
