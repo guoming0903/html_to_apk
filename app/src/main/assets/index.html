@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (直接響鈴版)</title>
+<title>月曆與值班工時統計 (原生喚醒版)</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -356,7 +356,7 @@
 
   .modal-overlay.active { display: flex; }
 
-  /* 強制將鬧鐘響鈴彈窗置於最上層，絕不被覆蓋 */
+  /* 強制將鬧鐘響鈴彈窗置於最上層，確保一眼看到確認鈕 */
   #alarmTriggerModal {
     z-index: 99999 !important;
   }
@@ -606,7 +606,7 @@
   </div>
 </div>
 
-<!-- 鬧鐘響起彈窗：設定 z-index 為 99999 確保在最前方 -->
+<!-- 鬧鐘響起彈窗：置於最上層，確保一眼看到確認鈕 -->
 <div id="alarmTriggerModal" class="modal-overlay">
   <div class="modal-card">
     <div style="font-size: 36px; margin-bottom: 8px;">⏰</div>
@@ -695,31 +695,28 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
-            <option value="sunrise">和弦 (Sunrise)</option>
-            <option value="beep">急促 (Beep)</option>
-            <option value="chime">鐘聲 (Chime)</option>
-            <option value="siren">警報 (Siren)</option>
-            <option value="shuaka">刷卡 (女聲：刷卡囉 + 逼逼聲)</option>
+            <option value="sunrise">和弦</option>
+            <option value="beep">急促</option>
+            <option value="chime">鐘聲</option>
+            <option value="siren">警報</option>
+            <option value="shuaka">刷卡</option>
           </select>
         </div>
 
-        <!-- 鬧鐘值別選擇：三列依序一值、二值、三值 -->
+        <!-- 鬧鐘值別選擇：三列純淨排列，無多餘文字 -->
         <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:5px; font-size:8.5pt; text-align:left; margin-top:6px; background:#f8fafc; padding:6px; border-radius:6px; border:1px solid var(--border-color);">
           <div style="font-weight:bold; color:#475569; margin-bottom:2px;">勾選適用班別：</div>
           <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <span style="font-weight:bold; width:32px; color:#475569;">一值:</span>
             <label style="cursor:pointer;"><input type="checkbox" value="一值1" checked> 一值1</label>
             <label style="cursor:pointer;"><input type="checkbox" value="一值2" checked> 一值2</label>
             <label style="cursor:pointer;"><input type="checkbox" value="一值3" checked> 一值3</label>
           </div>
           <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <span style="font-weight:bold; width:32px; color:#475569;">二值:</span>
             <label style="cursor:pointer;"><input type="checkbox" value="二值1" checked> 二值1</label>
             <label style="cursor:pointer;"><input type="checkbox" value="二值2" checked> 二值2</label>
             <label style="cursor:pointer;"><input type="checkbox" value="二值3" checked> 二值3</label>
           </div>
           <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <span style="font-weight:bold; width:32px; color:#475569;">三值:</span>
             <label style="cursor:pointer;"><input type="checkbox" value="三值1" checked> 三值1</label>
             <label style="cursor:pointer;"><input type="checkbox" value="三值2" checked> 三值2</label>
             <label style="cursor:pointer;"><input type="checkbox" value="三值3" checked> 三值3</label>
@@ -761,7 +758,7 @@
         <div class="help-title">⏰ 鬧鐘</div>
         <ul class="help-list">
           <li><b>班別連動：</b>勾選對應班別，僅輪值當天/前一天響鈴。</li>
-          <li><b>直接響鈴：</b>時間到時會直接跳出視窗並持續發出聲音，點擊「關閉鬧鐘鈴聲」按鈕即可停止。</li>
+          <li><b>直接響鈴：</b>結合原生喚醒與全螢幕意圖，時間到時點亮螢幕並立刻彈出確認鈕。</li>
         </ul>
       </div>
     </div>
@@ -769,7 +766,6 @@
 </div>
 
 <div class="app-nav">
-  <!-- 月曆分頁圖示改為動態顯示今天日期 -->
   <div class="nav-item active" onclick="switchTab('calendar', this)">
     <div class="nav-icon" style="position: relative; width: 22px; height: 22px; background: #ffffff; border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; border: 1.5px solid currentColor; margin: 0 auto 2px auto;">
       <div id="navBadgeMonth" style="background: var(--primary-color); color: white; height: 7px; line-height: 7px; font-size: 5px; font-weight: bold;">月</div>
@@ -834,7 +830,7 @@ var lunarInfo = [
   0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
   0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
   0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
-  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aaef,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,1a6c4,0x0aaef,
   0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
   0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
   0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x04b55,0x04b60,0x0a570,0x054e4,0x0d260,
@@ -952,7 +948,7 @@ async function syncLocalNotifications() {
 }
 // ---------------------------------------------------------------------------------
 
-// ----------------- 語音合成與音效播放 (刷卡結合女聲與高音質逼逼聲) -----------------
+// ----------------- 語音合成與音效播放 (雙軌強化) -----------------
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
   if (window.speechSynthesis.onvoiceschanged !== undefined) {
@@ -963,14 +959,13 @@ if ('speechSynthesis' in window) {
 }
 
 function playShuakaVoice() {
-  // 1. 播放女聲「刷卡囉」
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance('刷卡囉');
     utterance.lang = 'zh-TW';
     utterance.rate = 1.05; 
-    utterance.pitch = 1.3; // 清亮女聲
-    utterance.volume = 1.0; // 最大語音音量
+    utterance.pitch = 1.3; 
+    utterance.volume = 1.0; 
     
     var voices = window.speechSynthesis.getVoices();
     for (var i = 0; i < voices.length; i++) {
@@ -982,7 +977,6 @@ function playShuakaVoice() {
     window.speechSynthesis.speak(utterance);
   }
 
-  // 2. 同步發出超清晰的 POS 機高音質逼逼雙音軌提示音，確保絕對大聲與醒目
   try {
     if (!globalAudioCtx) {
       globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -996,7 +990,7 @@ function playShuakaVoice() {
       var gain = globalAudioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(idx === 0 ? 1046.50 : 1318.51, now + timeOffset);
-      gain.gain.setValueAtTime(0.9, now + timeOffset); // 高音量
+      gain.gain.setValueAtTime(1.0, now + timeOffset);
       gain.gain.exponentialRampToValueAtTime(0.001, now + timeOffset + 0.1);
       osc.connect(gain);
       gain.connect(globalAudioCtx.destination);
@@ -1063,7 +1057,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'square';
       osc.frequency.setValueAtTime(880, now + i * 0.25);
-      gain.gain.setValueAtTime(1.2, now + i * 0.25); // 提高 50% 音量
+      gain.gain.setValueAtTime(1.2, now + i * 0.25);
       gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1077,7 +1071,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.3);
-      gain.gain.setValueAtTime(1.05, now + idx * 0.3); // 提高 50% 音量
+      gain.gain.setValueAtTime(1.05, now + idx * 0.3);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1091,7 +1085,7 @@ function executeAudioNotes(type, audioCtx) {
     osc.frequency.setValueAtTime(400, now);
     osc.frequency.linearRampToValueAtTime(900, now + 0.6);
     osc.frequency.linearRampToValueAtTime(400, now + 1.2);
-    gain.gain.setValueAtTime(0.9, now); // 提高 50% 音量
+    gain.gain.setValueAtTime(0.9, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -1104,7 +1098,7 @@ function executeAudioNotes(type, audioCtx) {
       var gain = audioCtx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + idx * 0.2);
-      gain.gain.setValueAtTime(0.9, now + idx * 0.2); // 提高 50% 音量
+      gain.gain.setValueAtTime(0.9, now + idx * 0.2);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1800,7 +1794,7 @@ function renderAlarmList() {
     'beep': '急促',
     'chime': '鐘聲',
     'siren': '警報',
-    'shuaka': '刷卡 (女聲：刷卡囉 + 逼逼聲)'
+    'shuaka': '刷卡'
   };
 
   var timingNames = {
