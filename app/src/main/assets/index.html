@@ -873,7 +873,7 @@ function exitApp() {
   }
 }
 
-// 穩定語音朗誦
+// 穩定且支援 Android 離線的語音朗誦函式（對應「刷卡」選項）
 function speakShuakaVoice() {
   try {
     if ('speechSynthesis' in window) {
@@ -883,6 +883,16 @@ function speakShuakaVoice() {
       u.rate = 1.0;
       u.pitch = 1.1;
       u.volume = 1.0;
+
+      // 強制在 Android WebView 中搜尋並指定中文語音，避免預設失效
+      var voices = window.speechSynthesis.getVoices();
+      var zhVoice = voices.find(function(v) {
+        return v.lang === 'zh-TW' || v.lang === 'zh_TW' || v.lang.includes('zh');
+      });
+      if (zhVoice) {
+        u.voice = zhVoice;
+      }
+
       window.speechSynthesis.speak(u);
     }
   } catch(e) {
@@ -1034,16 +1044,21 @@ function previewAlarmSound() {
   }, 2500);
 }
 
+// 鬧鐘聲音分派函式（完整支援 5 種聲音選項）
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   unlockAudioEngine();
   
-  if (type === 'shuaka' || !type) {
+  var soundType = type || 'shuaka';
+
+  // 1. 刷卡：使用真人女聲語音朗讀
+  if (soundType === 'shuaka') {
     speakShuakaVoice();
-    alarmInterval = setInterval(speakShuakaVoice, 2200);
+    alarmInterval = setInterval(speakShuakaVoice, 3000); 
     return;
   }
-  
+
+  // 其他 4 種音效（和弦、急促、鐘聲、警報）使用 Web Audio API 離線合成
   function playCycle() {
     try {
       if (!globalAudioCtx) {
@@ -1051,10 +1066,10 @@ function playAlarmSound(type) {
       }
       if (globalAudioCtx.state === 'suspended') {
         globalAudioCtx.resume().then(function() {
-          executeAudioNotes(type, globalAudioCtx);
+          executeAudioNotes(soundType, globalAudioCtx);
         });
       } else {
-        executeAudioNotes(type, globalAudioCtx);
+        executeAudioNotes(soundType, globalAudioCtx);
       }
     } catch(e) {
       console.error("Audio playback error:", e);
@@ -1068,60 +1083,64 @@ function playAlarmSound(type) {
 function executeAudioNotes(type, audioCtx) {
   var now = audioCtx.currentTime;
 
-  if (type === 'beep') {
-    for (var i = 0; i < 4; i++) {
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(880, now + i * 0.25);
-      gain.gain.setValueAtTime(1.2, now + i * 0.25);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.15);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now + i * 0.25);
-      osc.stop(now + i * 0.25 + 0.15);
-    }
-  } else if (type === 'chime') {
-    var notes = [523.25, 659.25, 783.99]; 
-    notes.forEach(function(freq, idx) {
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.3);
-      gain.gain.setValueAtTime(1.05, now + idx * 0.3);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.3 + 0.6);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now + idx * 0.3);
-      osc.stop(now + idx * 0.3 + 0.6);
-    });
-  } else if (type === 'siren') {
-    var osc = audioCtx.createOscillator();
-    var gain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.linearRampToValueAtTime(900, now + 0.6);
-    osc.frequency.linearRampToValueAtTime(400, now + 1.2);
-    gain.gain.setValueAtTime(0.9, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 1.2);
-  } else { 
-    var chordNotes = [440, 554.37, 659.25, 880]; 
+  if (type === 'sunrise') {
+    // 2. 和弦：柔和且具穿透力的漸進和弦
+    var chordNotes = [523.25, 659.25, 783.99, 1046.50]; 
     chordNotes.forEach(function(freq, idx) {
       var osc = audioCtx.createOscillator();
       var gain = audioCtx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.2);
-      gain.gain.setValueAtTime(0.9, now + idx * 0.2);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.2 + 0.8);
+      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+      gain.gain.setValueAtTime(0.8, now + idx * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.6);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
-      osc.start(now + idx * 0.2);
-      osc.stop(now + idx * 0.2 + 0.8);
+      osc.start(now + idx * 0.1);
+      osc.stop(now + idx * 0.1 + 0.6);
     });
+  } else if (type === 'beep') {
+    // 3. 急促：高頻短促的警告逼聲
+    for (var i = 0; i < 4; i++) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now + i * 0.2);
+      gain.gain.setValueAtTime(1.0, now + i * 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + i * 0.2);
+      osc.stop(now + i * 0.2 + 0.1);
+    }
+  } else if (type === 'chime') {
+    // 4. 鐘聲：清脆的叮咚雙響
+    var notes = [523.25, 659.25, 783.99, 1046.50]; 
+    notes.forEach(function(freq, idx) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+      gain.gain.setValueAtTime(0.9, now + idx * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + idx * 0.15);
+      osc.stop(now + idx * 0.15 + 0.4);
+    });
+  } else if (type === 'siren') {
+    // 5. 警報：起伏的經典警報聲
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(500, now);
+    osc.frequency.linearRampToValueAtTime(950, now + 0.4);
+    osc.frequency.linearRampToValueAtTime(500, now + 0.8);
+    gain.gain.setValueAtTime(0.8, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.8);
   }
 }
 
@@ -1819,7 +1838,7 @@ function renderAlarmList() {
 
   var html = '';
   alarms.forEach(a => {
-    var soundText = soundNames[a.sound] || '刷卡,';
+    var soundText = soundNames[a.sound] || '刷卡';
     var timingText = timingNames[a.timing] !== undefined ? timingNames[a.timing] : '當天';
     html += '<div class="alarm-item">' +
               '<div class="alarm-item-header">' +
@@ -1898,8 +1917,16 @@ window.onload = function() {
   syncLocalNotifications();
   checkPendingAlarmTrigger();
   
-  // 頁面載入自動預設啟用與解鎖語音功能
+  // 頁面載入自動預設啟用與解鎖語音功能，並預先載入 Android WebView 語音清單
   unlockAudioEngine();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = function() {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }
 
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
     window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
@@ -1918,3 +1945,4 @@ window.onload = function() {
 </script>
 </body>
 </html>
+
