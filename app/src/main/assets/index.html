@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>月曆與值班工時統計 (自動啟用語音版)</title>
+<title>月曆與值班工時統計</title>
 <style>
   :root {
     --primary-color: #2563eb;       
@@ -695,7 +695,7 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
-            <option value="shuaka" selected>刷卡</option>
+            <option value="shuaka" selected>刷卡 (Base64 真人語音)</option>
             <option value="sunrise">和弦</option>
             <option value="beep">急促</option>
             <option value="chime">鐘聲</option>
@@ -753,10 +753,10 @@
       </div>
 
       <div class="help-section">
-        <div class="help-title">⏰ 鬧鐘喚醒與語音說明</div>
+        <div class="help-title">⏰ 鬧鐘與語音說明</div>
         <ul class="help-list">
-          <li><b>自動語音提醒：</b>頁面載入時即自動預設啟用「刷卡囉」真人語音提醒。</li>
-          <li><b>休眠喚醒：</b>鬧鐘響起時點擊手機通知，立刻跳出全螢幕【關閉鬧鐘】按鈕。</li>
+          <li><b>刷卡語音：</b>內嵌 Web Audio API 真人語音，免連網且定時鬧鈴 100% 穩定發聲。</li>
+          <li><b>休眠喚醒：</b>鬧鐘響起時點擊通知，將會立刻跳出全螢幕【關閉鬧鐘】確認鈕。</li>
         </ul>
       </div>
     </div>
@@ -805,6 +805,12 @@ var lastTriggeredMinute = '';
 var alarmInterval = null; 
 var globalAudioCtx = null;
 var previewTimeout = null;
+
+var currentAudioObj = null;
+var decodedAudioBuffer = null;
+
+// 真人錄音 Base64 內嵌字串
+var shuakaBase64Audio = "data:audio/mpeg;base64,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";
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -873,35 +879,29 @@ function exitApp() {
   }
 }
 
-// 穩定且支援 Android 離線的語音朗誦函式（對應「刷卡」選項）
-function speakShuakaVoice() {
+function loadBase64AudioBuffer() {
   try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance('刷卡囉，請準備刷卡');
-      u.lang = 'zh-TW';
-      u.rate = 1.0;
-      u.pitch = 1.1;
-      u.volume = 1.0;
-
-      // 強制在 Android WebView 中搜尋並指定中文語音，避免預設失效
-      var voices = window.speechSynthesis.getVoices();
-      var zhVoice = voices.find(function(v) {
-        return v.lang === 'zh-TW' || v.lang === 'zh_TW' || v.lang.includes('zh');
-      });
-      if (zhVoice) {
-        u.voice = zhVoice;
-      }
-
-      window.speechSynthesis.speak(u);
+    if (!globalAudioCtx) {
+      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    var base64Data = shuakaBase64Audio.split(',')[1];
+    var binaryString = window.atob(base64Data);
+    var len = binaryString.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    globalAudioCtx.decodeAudioData(bytes.buffer, function(buffer) {
+      decodedAudioBuffer = buffer;
+    }, function(e) {
+      console.error("Error decoding audio data", e);
+    });
   } catch(e) {
-    console.error("Speech Synthesis Error:", e);
+    console.error("Load audio buffer error:", e);
   }
 }
 
-// 自動預設解鎖 Web Audio 與語音引擎
-function unlockAudioEngine() {
+function speakShuakaVoice() {
   try {
     if (!globalAudioCtx) {
       globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -909,12 +909,35 @@ function unlockAudioEngine() {
     if (globalAudioCtx.state === 'suspended') {
       globalAudioCtx.resume();
     }
+    
+    if (decodedAudioBuffer) {
+      var source = globalAudioCtx.createBufferSource();
+      source.buffer = decodedAudioBuffer;
+      source.connect(globalAudioCtx.destination);
+      source.start(0);
+    } else {
+      if (currentAudioObj) {
+        currentAudioObj.pause();
+        currentAudioObj = null;
+      }
+      var a = new Audio(shuakaBase64Audio);
+      currentAudioObj = a;
+      a.play().catch(function(e) {
+        console.warn("Base64 Audio play warning:", e);
+      });
+    }
+  } catch(e) {
+    console.error("Base64 audio error:", e);
+  }
+}
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.resume();
-      var u = new SpeechSynthesisUtterance('');
-      u.lang = 'zh-TW';
-      window.speechSynthesis.speak(u);
+function unlockAudioEngine() {
+  try {
+    if (!globalAudioCtx) {
+      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') {
+      globalAudioCtx.resume();
     }
   } catch(e) {
     console.error("Unlock audio error:", e);
@@ -932,7 +955,7 @@ async function initLocalNotifications() {
       if (Capacitor.getPlatform() === 'android') {
         await window.Capacitor.Plugins.LocalNotifications.createChannel({
           id: 'alarm_high_importance',
-          name: '值班鬧鐘喚醒頻道',
+          name: '值班鬧鐘',
           description: '高優先度值班鬧鐘提醒',
           importance: 5,
           visibility: 1,
@@ -1044,21 +1067,18 @@ function previewAlarmSound() {
   }, 2500);
 }
 
-// 鬧鐘聲音分派函式（完整支援 5 種聲音選項）
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   unlockAudioEngine();
   
   var soundType = type || 'shuaka';
 
-  // 1. 刷卡：使用真人女聲語音朗讀
   if (soundType === 'shuaka') {
     speakShuakaVoice();
-    alarmInterval = setInterval(speakShuakaVoice, 3000); 
+    alarmInterval = setInterval(speakShuakaVoice, 1800);
     return;
   }
 
-  // 其他 4 種音效（和弦、急促、鐘聲、警報）使用 Web Audio API 離線合成
   function playCycle() {
     try {
       if (!globalAudioCtx) {
@@ -1084,7 +1104,6 @@ function executeAudioNotes(type, audioCtx) {
   var now = audioCtx.currentTime;
 
   if (type === 'sunrise') {
-    // 2. 和弦：柔和且具穿透力的漸進和弦
     var chordNotes = [523.25, 659.25, 783.99, 1046.50]; 
     chordNotes.forEach(function(freq, idx) {
       var osc = audioCtx.createOscillator();
@@ -1099,7 +1118,6 @@ function executeAudioNotes(type, audioCtx) {
       osc.stop(now + idx * 0.1 + 0.6);
     });
   } else if (type === 'beep') {
-    // 3. 急促：高頻短促的警告逼聲
     for (var i = 0; i < 4; i++) {
       var osc = audioCtx.createOscillator();
       var gain = audioCtx.createGain();
@@ -1113,7 +1131,6 @@ function executeAudioNotes(type, audioCtx) {
       osc.stop(now + i * 0.2 + 0.1);
     }
   } else if (type === 'chime') {
-    // 4. 鐘聲：清脆的叮咚雙響
     var notes = [523.25, 659.25, 783.99, 1046.50]; 
     notes.forEach(function(freq, idx) {
       var osc = audioCtx.createOscillator();
@@ -1128,7 +1145,6 @@ function executeAudioNotes(type, audioCtx) {
       osc.stop(now + idx * 0.15 + 0.4);
     });
   } else if (type === 'siren') {
-    // 5. 警報：起伏的經典警報聲
     var osc = audioCtx.createOscillator();
     var gain = audioCtx.createGain();
     osc.type = 'sawtooth';
@@ -1149,8 +1165,9 @@ function stopAlarmSoundOnly() {
     clearInterval(alarmInterval);
     alarmInterval = null;
   }
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+  if (currentAudioObj) {
+    currentAudioObj.pause();
+    currentAudioObj = null;
   }
 }
 
@@ -1917,28 +1934,28 @@ window.onload = function() {
   syncLocalNotifications();
   checkPendingAlarmTrigger();
   
-  // 頁面載入自動預設啟用與解鎖語音功能，並預先載入 Android WebView 語音清單
   unlockAudioEngine();
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.getVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = function() {
-        window.speechSynthesis.getVoices();
-      };
-    }
-  }
+  loadBase64AudioBuffer();
 
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
     window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
       if (state.isActive) {
         unlockAudioEngine();
+        loadBase64AudioBuffer();
         checkPendingAlarmTrigger();
       }
     });
   }
   
-  document.body.addEventListener('touchstart', unlockAudioEngine, { once: true });
-  document.body.addEventListener('click', unlockAudioEngine, { once: true });
+  document.body.addEventListener('touchstart', function() {
+    unlockAudioEngine();
+    loadBase64AudioBuffer();
+  }, { once: true });
+  
+  document.body.addEventListener('click', function() {
+    unlockAudioEngine();
+    loadBase64AudioBuffer();
+  }, { once: true });
   
   setInterval(checkAlarmsRealtime, 1000);
 };
