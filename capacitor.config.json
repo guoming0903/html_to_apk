@@ -2,5 +2,11 @@
   "appId": "com.convertisseur.apk",
   "appName": "值班表",
   "webDir": "app/src/main/assets",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_launcher",
+      "iconColor": "#488AFF"
+    }
+  }
 }
