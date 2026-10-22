@@ -33,18 +33,19 @@ jobs:
           
           npx cap sync
 
-      - name: Set up JDK 17
+      - name: Set up JDK 17 with Gradle Cache
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Build APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
-
+          ./gradlew assembleDebug --no-daemon
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
