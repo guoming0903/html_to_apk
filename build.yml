@@ -1,4 +1,4 @@
-name: Build Android APK
+_name: Build Android APK
 
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
       - name: Install Dependencies and Sync Capacitor
         run: |
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
           npm install @capacitor/app @capacitor/local-notifications
           
           if [ ! -d "android" ]; then
