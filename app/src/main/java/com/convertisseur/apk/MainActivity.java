@@ -1,53 +1,42 @@
 package com.convertisseur.apk;
 
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.WebChromeClient;
-import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
-    private WebView webView;
-
+public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        webView = new WebView(this);
-        setContentView(webView);
-
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setLoadWithOverviewMode(true);
-        webSettings.setUseWideViewPort(true);
-        
-        // 允許 WebView 不需手動互動即可播放音訊（解決鬧鐘無聲問題）
-        webSettings.setMediaPlaybackRequiresUserGesture(false);
-
-        webView.setWebViewClient(new WebViewClient());
-
-        // 處理網頁端關閉視窗請求（解決按退出分頁無反應問題）
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onCloseWindow(WebView window) {
-                super.onCloseWindow(window);
-                finish(); // 關閉目前 Activity
-            }
-        });
-
-        // 載入打包在 assets 中的 index.html
-        webView.loadUrl("file:///android_asset/index.html");
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText("值班萬年曆 - 原生鬧鐘背景服務執行中\n請透過排程設定鬧鐘");
+        tv.setGravity(android.view.Gravity.CENTER);
+        setContentView(tv);
     }
 
-    // 支援手機實體返回鍵上一頁功能
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+    public void scheduleExactAlarm(long triggerMillis, String title, String shiftName) {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        intent.putExtra("alarm_title", title);
+        intent.putExtra("shift_name", shiftName);
+
+        int requestCode = (int) System.currentTimeMillis();
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+            this,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        if (alarmManager != null) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerMillis,
+                pendingIntent
+            );
         }
     }
 }
