@@ -1,4 +1,4 @@
-name: Build Android APK
+_name: Build Android APK
 
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
       - name: Install Dependencies and Sync Capacitor
         run: |
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
           npm install @capacitor/app @capacitor/local-notifications
           
           if [ ! -d "android" ]; then
@@ -31,8 +32,6 @@ jobs:
           fi
           
           npx cap sync
-
-      # ====== 💡 注意：我們移除了 sed 修改指令，直接讀取您完美的 AndroidManifest.xml ======
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
