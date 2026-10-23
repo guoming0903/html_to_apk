@@ -84,7 +84,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    padding: 0 4px;
   }
 
   .work-hours-table { 
@@ -591,6 +592,15 @@
           <tr id="rowD"><th>D 班</th><td id="hrsD">0</td><td id="diffD">0</td><td id="handD">0</td><td id="holD">0</td></tr>
         </tbody>
       </table>
+      
+      <!-- 計算原則說明 -->
+      <div style="text-align: left; font-size: 10pt; color: var(--text-muted); margin-top: 6px; padding: 4px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; line-height: 1.4;">
+        <b>【計算原則】</b><br>
+        • <b>出勤</b>：總出勤時數 - 國定假日時數。<br>
+        • <b>差異</b>：出勤時數與一般辦公時數之差額。<br>
+        • <b>交接</b>：當月交接時數（每日0.5小時）累計。<br>
+        • <b>國假</b>：國定假日之總工時（日上限 8 小時）。
+      </div>
     </div>
   </div>
 
@@ -648,7 +658,7 @@
             <option value="1">前一天</option>
           </select>
           <select id="newAlarmSound" style="flex:1;" onchange="previewAlarmSound()">
-            <option value="shuaka" selected>刷卡 (語音)</option>
+            <option value="shuaka" selected>刷卡</option>
             <option value="sunrise">和弦</option>
             <option value="beep">急促</option>
             <option value="chime">鐘聲</option>
@@ -690,25 +700,25 @@
       <div class="help-section">
         <div class="help-title">📅 月曆操作</div>
         <ul class="help-list">
-          <li>點擊頂部【A / B / C / D 班】切換當前班別。</li>
-          <li>左右滑動月曆畫面或透過頂部下拉選單切換年份與月份。</li>
-          <li>點擊任意日期格子開啟編輯視窗，可輸入備註。</li>
+          <li><b>切換班別</b>：點擊頂部【A / B / C / D 班】切換當前班別。</li>
+          <li><b>切換月份</b>：左右滑動月曆畫面，或透過頂部下拉選單選擇年份與月份。</li>
+          <li><b>新增/修改備註</b>：點擊任意日期格子，即可開啟視窗輸入備註。</li>
         </ul>
       </div>
 
       <div class="help-section">
-        <div class="help-title">📊 工時統計操作</div>
+        <div class="help-title">📊 工時統計</div>
         <ul class="help-list">
-          <li>左右滑動統計頁面切換查看不同月份工時數據。</li>
-          <li>頁面自動計算出勤、國假扣減、差異與交接時數。</li>
+          <li><b>切換月份數據</b>：左右滑動統計頁面，即可查看不同月份的工時資料。</li>
         </ul>
       </div>
 
       <div class="help-section">
-        <div class="help-title">⏰ 鬧鐘與原生喚醒</div>
+        <div class="help-title">⏰ 鬧鐘設定</div>
         <ul class="help-list">
-          <li>結合 Android 原生 AlarmManager 與 AlarmPlugin 支援黑屏與關閉 App 喚醒。</li>
-          <li>鬧鐘響起時會強制彈出全螢幕警報，並連續播放「刷卡囉」語音或警報。</li>
+          <li><b>新增鬧鐘</b>：設定時間、名稱、響鈴時間（當天/前一天）、鈴聲類型及適用班別後點擊【加入鬧鐘】。</li>
+          <li><b>開關與刪除</b>：於鬧鐘列表中可隨時切換開關或點擊【✕】刪除鬧鐘。</li>
+          <li><b>關閉響鈴</b>：鬧鐘響起時，點擊全螢幕警報上的【確定 / 關閉鬧鐘】即可停止響鈴。</li>
         </ul>
       </div>
     </div>
@@ -759,64 +769,6 @@ var globalAudioCtx = null;
 var previewTimeout = null;
 var currentAudioObj = null;
 
-var shuakaBase64Audio = "data:audio/mpeg;base64,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чко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";
-
-var shiftHours = {
-  "一值1": 9, "一值2": 9, "一值3": 9,
-  "二值1": 8, "二值2": 8, "二值3": 6.5,
-  "三值1": 8.5, "三值2": 7, "三值3": 7
-};
-
-var lunarInfo = [
-  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
-  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
-  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
-  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
-  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
-  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
-  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
-  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
-  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
-  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
-  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
-  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
-  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
-  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
-  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
-  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,1a6c4,0x0aaef,
-  0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
-  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
-  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x04b55,0x04b60,0x0a570,0x054e4,0x0d260,
-  0x0e968,0x0d520,0x0daa0,0x06aa6,0x056d0,0x04ae0,0x0a9d4,0x0a4d0,0x0d150,0x0f252,
-  0x0d520
-];
-
-var solarMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
-var Gan = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
-var Zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
-var nStr1 = ['日','一','二','三','四','五','六','七','八','九','十'];
-var nStr2 = ['初','十','廿','卅','卌'];
-
-var RotatblA=["一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3"];
-var RotatblB=["二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1"];
-var RotatblC=["三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1"];
-var RotatblD=["大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3"];
-
-var sFtv = ["0101*元旦", "0228*和平日", "0501*勞動節", "0928*教師節", "1010*國慶日", "1025*光復節", "1225*行憲日"];
-var lFtv = ["0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"];
-
-function exitApp() {
-  try {
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-      window.Capacitor.Plugins.App.exitApp();
-    } else {
-      window.close();
-    }
-  } catch (e) {
-    window.close();
-  }
-}
-
 function unlockAudioEngine() {
   try {
     if (!globalAudioCtx) {
@@ -835,14 +787,14 @@ function speakShuakaVoice() {
       currentAudioObj.pause();
       currentAudioObj = null;
     }
-    var a = new Audio(shuakaBase64Audio);
+    var a = new Audio('shuaka.mp3');
     a.volume = 1.0;
     currentAudioObj = a;
     a.play().catch(function(e) {
       console.warn("Audio play warning:", e);
     });
   } catch(e) {
-    console.error("Base64 audio error:", e);
+    console.error("Audio error:", e);
   }
 }
 
@@ -892,9 +844,10 @@ function previewAlarmSound() {
   if (previewTimeout) clearTimeout(previewTimeout);
   
   playAlarmSound(soundType);
+  // 預覽時間設定為精準的 3 秒 (3000ms)
   previewTimeout = setTimeout(function() {
     stopAlarmSoundOnly();
-  }, 2500);
+  }, 3000);
 }
 
 function playAlarmSound(type) {
@@ -1112,6 +1065,50 @@ function getShiftNameForDate(targetDate) {
   return targetShiftTable[rota];
 }
 
+var shiftHours = {
+  "一值1": 9, "一值2": 9, "一值3": 9,
+  "二值1": 8, "二值2": 8, "二值3": 6.5,
+  "三值1": 8.5, "三值2": 7, "三值3": 7
+};
+
+var lunarInfo = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aaef,
+  0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x04b55,0x04b60,0x0a570,0x054e4,0x0d260,
+  0x0e968,0x0d520,0x0daa0,0x06aa6,0x056d0,0x04ae0,0x0a9d4,0x0a4d0,0x0d150,0x0f252,
+  0x0d520
+];
+
+var solarMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+var Gan = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+var Zhi = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+var nStr1 = ['日','一','二','三','四','五','六','七','八','九','十'];
+var nStr2 = ['初','十','廿','卅','卌'];
+
+var RotatblA=["一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3"];
+var RotatblB=["二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1","三值2","三值3","小空1"];
+var RotatblC=["三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1"];
+var RotatblD=["大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3"];
+
+var sFtv = ["0101*元旦", "0228*和平日", "0501*勞動節", "0928*教師節", "1010*國慶日", "1025*光復節", "1225*行憲日"];
+var lFtv = ["0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"];
+
 function getCalendarData(y, m) {
   var sDObj, lDObj;
   var cY, cM, cD;
@@ -1246,7 +1243,6 @@ function drawCld(SY,SM) {
   var holHoursA = 0, holHoursB = 0, holHoursC = 0, holHoursD = 0;
   var handHoursA = 0, handHoursB = 0, handHoursC = 0, handHoursD = 0;
 
-  // 動態根據當月週數調整表格行數 (隱藏或顯示第 6 行)
   var totalCellsNeeded = currentCalData.firstWeek + currentCalData.length;
   var totalRows = totalCellsNeeded > 35 ? 6 : 5;
   for(var r=0; r<6; r++) {
