@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://android.com"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.convertisseur.apk">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -12,13 +12,13 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label=""
+        android:label="值班萬年曆"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
-            android:name="com.convertisseur.apk.MainActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,16 +26,17 @@
             </intent-filter>
         </activity>
 
+        <!-- 修正：將 showOnLockScreen 改為 showWhenLocked，確保能在鎖屏/背景彈出 -->
         <activity
-            android:name="com.convertisseur.apk.AlarmAlertActivity"
+            android:name=".AlarmAlertActivity"
             android:exported="false"
-            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <receiver
-            android:name="com.convertisseur.apk.AlarmReceiver"
+            android:name=".AlarmReceiver"
             android:enabled="true"
             android:exported="false" />
 
