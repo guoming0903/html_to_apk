@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 使用白色作為底色，避免找不到背景檔而破圖 -->
+    <!-- 使用純白底色 -->
     <background android:drawable="@android:color/white" />
-    <!-- 前景圖示維持使用專案中的圖案 -->
-    <foreground android:mipmap="@mipmap/ic_launcher_foreground" />
+    <!-- 修正為正確的 android:drawable 屬性 -->
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>
