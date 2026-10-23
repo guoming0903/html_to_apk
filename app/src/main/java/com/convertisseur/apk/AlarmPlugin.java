@@ -18,6 +18,7 @@ public class AlarmPlugin extends Plugin {
         Long triggerMillis = call.getLong("triggerMillis");
         String title = call.getString("title");
         String shiftName = call.getString("shiftName");
+        String sound = call.getString("sound", "shuaka");
 
         if (triggerMillis == null) {
             call.reject("Must provide triggerMillis");
@@ -27,10 +28,10 @@ public class AlarmPlugin extends Plugin {
         Context context = getContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         
-        // 綁定你寫好的 AlarmReceiver
         Intent intent = new Intent(context, AlarmReceiver.class);
         intent.putExtra("alarm_title", title);
         intent.putExtra("shift_name", shiftName);
+        intent.putExtra("alarm_sound", sound);
 
         int requestCode = (int) System.currentTimeMillis();
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
@@ -41,7 +42,6 @@ public class AlarmPlugin extends Plugin {
         );
 
         if (alarmManager != null) {
-            // 使用你原本設計的精準喚醒排程
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 triggerMillis,

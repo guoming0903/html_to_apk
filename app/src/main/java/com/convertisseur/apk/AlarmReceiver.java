@@ -19,10 +19,12 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         String title = intent.getStringExtra("alarm_title");
         String shiftName = intent.getStringExtra("shift_name");
+        String sound = intent.getStringExtra("alarm_sound");
 
         Intent alertIntent = new Intent(context, AlarmAlertActivity.class);
         alertIntent.putExtra("alarm_title", title);
         alertIntent.putExtra("shift_name", shiftName);
+        alertIntent.putExtra("alarm_sound", sound);
         alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(alertIntent);
     }
