@@ -16,7 +16,7 @@ public class AlarmAlertActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 關鍵修正：強制在背景、鎖屏狀態下喚醒螢幕並顯示在最上層
+        // 強制在黑屏、鎖屏狀態下喚醒螢幕並顯示在最上層
         getWindow().addFlags(
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
             WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
@@ -70,7 +70,6 @@ public class AlarmAlertActivity extends Activity {
 
     private void playAlarmSound() {
         try {
-            // 嘗試播放專案中的語音檔，若無則改用系統預設鬧鐘音效避免當機
             mediaPlayer = MediaPlayer.create(this, R.raw.shuaka);
             if (mediaPlayer != null) {
                 mediaPlayer.setLooping(true);
