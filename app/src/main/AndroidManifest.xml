@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 關鍵新增：允許懸浮窗/顯示在其他應用程式上層的權限 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:allowBackup="true"
@@ -26,7 +28,7 @@
             </intent-filter>
         </activity>
 
-        <!-- 修正：將 showOnLockScreen 改為 showWhenLocked，確保能在鎖屏/背景彈出 -->
+        <!-- 鬧鐘響起彈出頁面 -->
         <activity
             android:name=".AlarmAlertActivity"
             android:exported="false"
