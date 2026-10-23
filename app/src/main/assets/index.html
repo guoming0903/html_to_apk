@@ -24,39 +24,41 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  body { 
+  html, body { 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
     text-align: center; 
     background-color: var(--bg-color); 
     padding: 0; 
     margin: 0;
     color: var(--text-main);
-    overflow-x: hidden;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .calendar-container { 
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    padding: 4px 4px 65px 4px;
+    height: calc(100vh - 55px);
+    padding: 2px;
     border-radius: 0;
     box-shadow: none;
     position: relative; 
     background: var(--card-bg);
+    overflow: hidden;
   }
 
-  .tab-pane { display: none !important; }
-  .tab-pane.active { display: block !important; }
+  .tab-pane { display: none !important; flex: 1; flex-direction: column; overflow: hidden; }
+  .tab-pane.active { display: flex !important; }
 
   .work-hours-panel { 
     background: transparent; 
     border: none; 
-    padding-top: 10px; 
+    padding-top: 5px; 
     width: 100%;
-    margin-top: 0;              
+    flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    touch-action: pan-y;
     overflow: hidden;
   }
 
@@ -66,20 +68,23 @@
     color: var(--primary-color);
     margin-bottom: 2px;
     line-height: 1.3;
+    flex-shrink: 0;
   }
 
   .panel-subtitle {
     font-size: 9pt;               
     color: var(--text-muted);
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
   }
 
   .stats-swipe-wrapper {
     width: 100%;
-    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
-    will-change: transform, opacity;
-    touch-action: pan-y;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .work-hours-table { 
@@ -90,9 +95,8 @@
 
   .work-hours-table th, .work-hours-table td { 
     border: 1px solid var(--border-color);
-    padding: 5px 2px;              
+    padding: 4px 2px;              
     text-align: center; 
-    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   .work-hours-table th { 
@@ -100,7 +104,6 @@
     color: var(--primary-color); 
     font-size: 9pt;               
     font-weight: 700;
-    height: 40px;                  
   }
 
   .work-hours-table tbody th {
@@ -108,7 +111,6 @@
     color: var(--primary-color);
     font-size: 9pt;               
     font-weight: 700;
-    height: auto;
   }
 
   .work-hours-table td {
@@ -122,7 +124,6 @@
     background-color: #dbeafe !important;
   }
 
-  .work-hours-table tr.selected-row tbody th,
   .work-hours-table tr.selected-row th {
     background-color: var(--primary-color) !important;
     color: #ffffff !important;
@@ -135,20 +136,25 @@
 
   .main-panel { 
     width: 100%;                  
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .cal-header {
     background: transparent;
     color: var(--text-main);
-    padding: 0 0 4px 0;
+    padding: 0 0 2px 0;
     margin-bottom: 2px;
+    flex-shrink: 0;
   }
 
   .header-controls { 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
-    gap: 4px; 
+    gap: 2px; 
   }
 
   .header-top {
@@ -176,7 +182,6 @@
     font-weight: 700; 
     color: var(--text-main); 
     white-space: nowrap; 
-    letter-spacing: 0.5px;
   }
 
   button { 
@@ -190,9 +195,7 @@
     transition: all 0.2s;
   }
 
-  button:hover {
-    background: #e2e8f0;
-  }
+  button:hover { background: #e2e8f0; }
 
   .shift-btn-group {
     display: flex;
@@ -213,50 +216,76 @@
   }
 
   .cal-swipe-wrapper {
-    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    touch-action: pan-y;
+    overflow: hidden;
   }
 
   table.cal-table { 
     border-collapse: collapse; 
     background-color: var(--cal-bg);
     width: 100%; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     table-layout: fixed; 
     border-radius: 8px;
     overflow: hidden;
     border: none;
-    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
-    will-change: transform, opacity;
+  }
+
+  table.cal-table thead {
+    flex-shrink: 0;
+  }
+
+  .week-header {
+    display: flex;
+    width: 100%;
   }
 
   .week-header th { 
+    flex: 1;
     background-color: #e2e8f0; 
-    width: auto; 
-    padding: 3px 0; 
+    padding: 2px 0; 
     font-weight: 700; 
-    font-size: 9pt;
+    font-size: 8.5pt;
     border: none;
-    height: 24px;
+    text-align: center;
+  }
+
+  table.cal-table tbody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  table.cal-table tbody tr {
+    flex: 1;
+    display: flex;
+    width: 100%;
   }
 
   .dayCell { 
-    width: auto; 
-    height: 50px; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100% !important; 
     text-align: center; 
-    vertical-align: top; 
     border: none;
     background: transparent;
-    box-sizing: border-box; 
-    padding: 1px 1px;
-    transition: all 0.2s ease;
+    padding: 1px;
     position: relative;
     cursor: pointer;
+    overflow: hidden;
   }
 
   .dayCell.cell-has-future-note {
     background-color: #fef3c7 !important;
-    border: none !important;
     border-radius: 4px;
   }
 
@@ -264,30 +293,24 @@
     background-color: var(--today-bg) !important; 
     color: #fff !important;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    line-height: 18px !important;
+    width: 16px;
+    height: 16px;
+    line-height: 16px !important;
     margin: 0 auto;
-    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.4);
   }
 
   .sd-text { 
-    font-size: 10.5pt;               
+    font-size: 9.5pt;               
     font-weight: 700; 
     display: block; 
-    line-height: 1.0; 
+    line-height: 1.1; 
   }
 
   .ld-text { 
-    font-size: 6.5pt;              
+    font-size: 6pt;              
     display: block; 
     color: var(--text-muted); 
     line-height: 1.0; 
-    margin-top: 1px;
-    height: 10px;
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    white-space: nowrap; 
     font-weight: 600;
   }
 
@@ -298,45 +321,30 @@
 
   .shift-text {
     display: block;
-    font-size: 6.5pt;              
+    font-size: 6pt;              
     color: #0369a1;
     font-weight: 700;
     line-height: 1.0;
-    margin-top: 1px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .note-indicator {
     display: block;
-    font-size: 6pt;              
+    font-size: 5.5pt;              
     color: #ffffff;
     background: #d97706;
     border-radius: 2px;
     padding: 0px 1px;
-    margin-top: 1px;
-    overflow: hidden;
-    white-space: nowrap;
     font-weight: bold;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     border: 1px solid #b45309;
     max-width: 100%;
-    line-height: 1.1;
+    line-height: 1.0;
   }
 
   .note-indicator.note-past {
     background: #cbd5e1 !important;
     color: #64748b !important;
     border-color: #94a3b8 !important;
-    box-shadow: none !important;
     font-weight: normal !important;
-  }
-
-  .note-indicator.note-future {
-    background: #d97706 !important;
-    color: #ffffff !important;
-    font-weight: bold !important;
   }
 
   .holiday-text {
@@ -396,11 +404,6 @@
     margin-top: 12px;
   }
 
-  .modal-actions button {
-    padding: 6px 14px;
-    font-size: 9.5pt;
-  }
-
   .btn-save {
     background: var(--primary-color);
     color: #fff;
@@ -418,31 +421,26 @@
     width: 100%;
     cursor: pointer;
     box-shadow: 0 8px 20px rgba(220, 38, 38, 0.6);
-    animation: pulse-large 1.2s infinite;
-  }
-
-  @keyframes pulse-large {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-    70% { transform: scale(1.04); box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
   }
 
   .alarm-panel-container {
     width: 100%;
     text-align: left;
-    padding: 8px;
+    padding: 4px 8px;
     font-size: 9pt;
+    overflow-y: auto;
+    flex: 1;
   }
 
   .alarm-item {
     background: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .alarm-item-header {
@@ -452,7 +450,7 @@
   }
 
   .alarm-time {
-    font-size: 13pt;
+    font-size: 12pt;
     font-weight: bold;
     color: var(--primary-color);
   }
@@ -476,17 +474,12 @@
     display: flex;
     gap: 6px;
     align-items: center;
-    margin-bottom: 6px;
-    flex-wrap: nowrap;
+    margin-bottom: 4px;
   }
 
-  .alarm-form-row input[type="text"] {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .alarm-form-row input[type="text"], .alarm-form-row input[type="time"] {
-    padding: 4px 6px;
+  .alarm-form-row input[type="text"] { flex: 1; min-width: 0; }
+  .alarm-form-row input[type="text"], .alarm-form-row input[type="time"], .alarm-form-row select {
+    padding: 3px 6px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 9pt;
@@ -498,53 +491,36 @@
     width: 34px;
     height: 20px;
   }
-
   .switch input { opacity: 0; width: 0; height: 0; }
-
   .slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
     background-color: #ccc; transition: .3s; border-radius: 20px;
   }
-
   .slider:before {
     position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
     background-color: white; transition: .3s; border-radius: 50%;
   }
-
   input:checked + .slider { background-color: var(--primary-color); }
   input:checked + .slider:before { transform: translateX(14px); }
 
   .help-container {
     text-align: left;
     padding: 10px 4px;
-    line-height: 1.6;
-    font-size: 11pt;
+    line-height: 1.5;
+    font-size: 10pt;
+    overflow-y: auto;
+    flex: 1;
   }
-
   .help-section {
     background: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
   }
-
-  .help-title {
-    font-weight: bold;
-    color: var(--primary-color);
-    font-size: 12pt;
-    margin-bottom: 6px;
-  }
-
-  .help-list {
-    margin: 0;
-    padding-left: 20px;
-    color: #334155;
-  }
-
-  .help-list li {
-    margin-bottom: 4px;
-  }
+  .help-title { font-weight: bold; color: var(--primary-color); font-size: 11pt; margin-bottom: 4px; }
+  .help-list { margin: 0; padding-left: 18px; color: #334155; }
+  .help-list li { margin-bottom: 2px; }
 
   .app-nav {
     position: fixed; bottom: 0; left: 0; width: 100%; height: 55px;
@@ -561,35 +537,12 @@
     position: relative;
   }
 
-  .nav-icon {
-    font-size: 18px;
-    line-height: 1;
-    margin-bottom: 1px;
-    filter: none;
-    opacity: 0.9;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  .nav-item.active {
-    color: var(--primary-color);
-    font-weight: 800;
-    background-color: #eff6ff;
-  }
-
-  .nav-item.active .nav-icon {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
+  .nav-icon { font-size: 18px; line-height: 1; margin-bottom: 1px; opacity: 0.9; }
+  .nav-item.active { color: var(--primary-color); font-weight: 800; background-color: #eff6ff; }
+  .nav-item.active .nav-icon { opacity: 1; transform: scale(1.1); }
   .nav-item.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 15%;
-    width: 70%;
-    height: 3px;
-    background-color: var(--primary-color);
-    border-radius: 0 0 4px 4px;
+    content: ''; position: absolute; top: 0; left: 15%; width: 70%; height: 3px;
+    background-color: var(--primary-color); border-radius: 0 0 4px 4px;
   }
 </style>
 </head>
@@ -608,9 +561,9 @@
 
 <div id="alarmTriggerModal" class="modal-overlay">
   <div class="modal-card" style="background: #ffffff; border: 3px solid #ef4444;">
-    <div style="font-size: 48px; margin-bottom: 4px; animation: pulse-large 1s infinite;">⏰</div>
-    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 18pt; color:#dc2626; margin-bottom: 6px; font-weight:900;">鬧鐘響起</div>
-    <div id="alarmTriggerDetail" style="font-size: 13pt; color:#1e293b; margin-bottom: 24px; font-weight: bold;">班別時間到了！</div>
+    <div style="font-size: 42px; margin-bottom: 4px;">⏰</div>
+    <div id="alarmTriggerTitle" class="modal-header" style="font-size: 16pt; color:#dc2626; margin-bottom: 6px; font-weight:900;">鬧鐘響起</div>
+    <div id="alarmTriggerDetail" style="font-size: 12pt; color:#1e293b; margin-bottom: 20px; font-weight: bold;">班別時間到了！</div>
     <button class="btn-stop-alarm" onclick="stopAlarm()">確定 / 關閉鬧鐘</button>
   </div>
 </div>
@@ -680,10 +633,10 @@
 
   <!-- 鬧鐘設定 Tab -->
   <div id="tab-alarm" class="main-panel tab-pane">
-    <div class="panel-title" style="margin-bottom: 10px;">⏰ 值班鬧鐘設定</div>
+    <div class="panel-title" style="margin-bottom: 6px;">⏰ 值班鬧鐘設定</div>
 
     <div class="alarm-panel-container">
-      <div style="margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+      <div style="margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
         <div style="font-weight:bold; font-size:9pt; margin-bottom:4px; color:#475569;">➕ 新增鬧鐘</div>
         <div class="alarm-form-row">
           <input type="time" id="newAlarmTime" value="07:30">
@@ -703,25 +656,25 @@
           </select>
         </div>
 
-        <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:5px; font-size:8.5pt; text-align:left; margin-top:6px; background:#f8fafc; padding:6px; border-radius:6px; border:1px solid var(--border-color);">
-          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <label style="cursor:pointer;"><input type="checkbox" value="一值1" checked> 一值1</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="一值2" checked> 一值2</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="一值3" checked> 一值3</label>
+        <div id="newAlarmShifts" style="display:flex; flex-direction:column; gap:4px; font-size:8.5pt; text-align:left; margin-top:4px; background:#f8fafc; padding:4px; border-radius:6px; border:1px solid var(--border-color);">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label><input type="checkbox" value="一值1" checked> 一值1</label>
+            <label><input type="checkbox" value="一值2" checked> 一值2</label>
+            <label><input type="checkbox" value="一值3" checked> 一值3</label>
           </div>
-          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <label style="cursor:pointer;"><input type="checkbox" value="二值1" checked> 二值1</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="二值2" checked> 二值2</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="二值3" checked> 二值3</label>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label><input type="checkbox" value="二值1" checked> 二值1</label>
+            <label><input type="checkbox" value="二值2" checked> 二值2</label>
+            <label><input type="checkbox" value="二值3" checked> 二值3</label>
           </div>
-          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <label style="cursor:pointer;"><input type="checkbox" value="三值1" checked> 三值1</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="三值2" checked> 三值2</label>
-            <label style="cursor:pointer;"><input type="checkbox" value="三值3" checked> 三值3</label>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label><input type="checkbox" value="三值1" checked> 三值1</label>
+            <label><input type="checkbox" value="三值2" checked> 三值2</label>
+            <label><input type="checkbox" value="三值3" checked> 三值3</label>
           </div>
         </div>
 
-        <button class="btn-save" style="margin-top:8px; width:100%; padding:6px; font-weight:bold; font-size:9pt;" onclick="addAlarm()">加入鬧鐘</button>
+        <button class="btn-save" style="margin-top:6px; width:100%; padding:5px; font-weight:bold; font-size:9pt;" onclick="addAlarm()">加入鬧鐘</button>
       </div>
 
       <div id="alarmListContainer">
@@ -732,7 +685,7 @@
 
   <!-- 操作說明 Tab -->
   <div id="tab-help" class="main-panel tab-pane">
-    <div class="panel-title" style="margin-bottom: 10px; font-size: 13pt;">📖 操作說明</div>
+    <div class="panel-title" style="margin-bottom: 6px; font-size: 12pt;">📖 操作說明</div>
     <div class="help-container">
       <div class="help-section">
         <div class="help-title">📅 月曆操作</div>
@@ -752,11 +705,10 @@
       </div>
 
       <div class="help-section">
-        <div class="help-title">⏰ 鬧鐘設定與黑屏喚醒</div>
+        <div class="help-title">⏰ 鬧鐘與原生喚醒</div>
         <ul class="help-list">
-          <li>系統透過本地推播通知（LocalNotifications）支援休眠與黑屏喚醒。</li>
-          <li>鬧鐘響起時會強制彈出確認畫面，並連續播放「刷卡」語音或警報。</li>
-          <li>請確保手機設定中允許本 App 發送通知與背景執行。</li>
+          <li>結合 Android 原生 AlarmManager 與 AlarmPlugin 支援黑屏與關閉 App 喚醒。</li>
+          <li>鬧鐘響起時會強制彈出全螢幕警報，並連續播放「刷卡囉」語音或警報。</li>
         </ul>
       </div>
     </div>
@@ -765,9 +717,9 @@
 
 <div class="app-nav">
   <div class="nav-item active" onclick="switchTab('calendar', this)">
-    <div class="nav-icon" style="position: relative; width: 18px; height: 18px; background: #ffffff; border-radius: 3px; display: flex; flex-direction: column; overflow: hidden; border: 1.2px solid currentColor; margin: 0 auto 1px auto;">
-      <div id="navBadgeMonth" style="background: var(--primary-color); color: white; height: 6px; line-height: 6px; font-size: 4.5px; font-weight: bold;">月</div>
-      <div id="navBadgeDay" style="flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 8.5px; color: var(--text-main);">--</div>
+    <div class="nav-icon" style="position: relative; width: 16px; height: 16px; background: #ffffff; border-radius: 3px; display: flex; flex-direction: column; overflow: hidden; border: 1.2px solid currentColor; margin: 0 auto 1px auto;">
+      <div id="navBadgeMonth" style="background: var(--primary-color); color: white; height: 5px; line-height: 5px; font-size: 4px; font-weight: bold;">月</div>
+      <div id="navBadgeDay" style="flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 8px; color: var(--text-main);">--</div>
     </div>
     <span>月曆</span>
   </div>
@@ -805,11 +757,9 @@ var lastTriggeredMinute = '';
 var alarmInterval = null; 
 var globalAudioCtx = null;
 var previewTimeout = null;
-
 var currentAudioObj = null;
-var decodedAudioBuffer = null;
 
-var shuakaBase64Audio = "data:audio/mpeg;base64,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чкоKmXtMHCKIVClkLCkVo4XMQS6Gz/ozbz9SM50QqKQW6hU2C2ls2Sv/zJ+ZPq98987LJuhHxsFqchnPGazo9JdnQ7OUinDAB5RMLqQgAKEEbyAqaTVRQgvsplnu7ZoH/A5oJCFKU4WFgjWUoPKHLtKjX0Wrp5ZhYoGZEx3v1nyRCAkEFfRQsZ/bMI//NkxOUpVBqU8tJFNYQ6/xDf1/603+qsnCsLFlpfJspXyoyZoiCrM50FnSr///pafOoTmi6AqKxSkJgAQh4a9+t30dCq0lTKDQIKDFdkJKWytUXOsiIFkAISVWABgCVQGVb7d1VoCAsEIQDWg6zHmenMGsd4kMsqLzMISCsQQ4Mj65KTdFt1J+2vlp9+ttdh//NkxMIjCjKu/i4QPKgMn2uuZR+q+Sy3RDrnr9V//pnb+Npre+vIyCx03qTU5snyVRspRdcLijCj0M3/6OQxRYymShrNs9d1SVDOLBAzleNQrS08///ddFdH3mOgo6oeVizHMYWpShoNcUlsWCinKiEwkZdE7JJ7mx0FdabNOCNBzhjp6g2gzGZ4ex6ZgsZX//NkxLglz6qePMrLNGYJqu+ZQ3aDkfd2nsW6OUSFSUE7CTt1+rTeitZsCLNa7S6shqTLVylKVSn6db0OAlIcSxWV1rzL9r+yGLVS/enS//+Xr/aRKGM80EOHhptqUf7CQFM1I/IMn2kskv/z3siujN6wzPm8OEyqBNqugFnrZrpocql18vKRKAs29pAIwRlK//NkxKMdW5bBvmsEzoHE0ewY7entf6SqxoUBE/K20kcpaWVTMysXlZe01mtcqrmRE5KNNzaadEMZ56Xum9/l///TRSlynlVqJKxWC3/63QaVACACtuilT3DrKkQFkWxRMvAzAXYkVBwRDQJTTWcRPVJWdVbvala5K7YukJTDmtepdAELMyGH61FVIdhI5Uet//NkxLAcE8KxvnrEkmhgGMGgaNuOkgmwROZ4AChkNEQaPNnSVEjcWYVQtBakj1u/sb4dHNfcpbJIW5XDypCFc02ycAWCsTktIRYCwFnQaiVV+5CfddvX4nc2Zkz9H///kvh/JdkIX/uUGyFYhjGUZHqxkNT7fqFEoYrTHawK/faVbmQrZS0S6Oj/VvL9P//9//NkxMIaIbJlvEhLSDmWpIp9ZG8VbCXH8zog2TkJyJMhVndmsnCDRCwlDKL8GaJ4Ndws7SZ+HmwZ0xWzW9ps2fZx9/KI5pomP1TkXlctX5DEYPTUvASVnDC4PnLy6NMj6sQ/LRmWyuxZRjhOoUoKYWx3kfG4DIFuvVYUz6wpD9P3pEntv1DlJvgYg43qwo+G//NkxNwYE6pACGBFMYOLCqn6BQ9pxcBKCbCvw1tinUAmyZLbRigtqmT7hRWMRpalRjQRqkqQQbIiqw5zgbx1Xenlxn/ciJTO1NVWiUm//NkxP4hW5YkAHhHTD33om+e5sCJ7xymlrA7oiU+aXGISRoiUTwVnFGQkaZM3IJWwu0oj75MXV7iUVtH/7fffje1bTtX7/PV95vcKn59lqfw+bG77yd+1Vo02fEh3/X9k18jDoM16gvrZd/YnLQaIq9wpdeRsObnqkOCQYZGjJh1BGEK//P1VhuQqY06pWm2//NkxPshs84YKHpGxGWtobbTthQq47MwMx4ly/pjQIax9bnF6UDw4R9fZ3nwc9JGSzU8oqZewme9sRGsgspUJEgSCN7N1nJmwhWROdL1WIf/C1ZypinXNWPgMd1YwwhY6guKw9GxRhgqAylEwOGvHKEJyRdqRjYeUu2Eoanwl8O81Ll3DlSyOQRasyps9jl7//NkxPcjA/oQAEmHPdRHNPMpQp4r0wgsb3xOVkxwIU9a5ekszczNhrxBLtdTNlXViyVT/tXpHe+fWkT3kpvqnmzn6/buQJa3rXNPB3iEuMPd1uVevNF8CkD9UQj+vneSqyno/zzpGmz5OsaxPFGbLOJpoF0PZvGNSMt6l5tr0vp8v1mXeTeTCsr1LM3Pd3dl//NkxO4ec+4UCDBG9MNYZCDp6/so598vye8Ut21ddRACFjGOG39XWPLRv97NVjiZoOwRGgHuZBneyImBmFk4HIYciODZGG3eq+PH7zls51kemUmhi3taBweVLJsvCXzeXfKStoqKFuc+082mVsnFaZpajVEjjVWRZ6XttOTS-XSWlNSrTejK3bx4b53+TtPP//NkxPchW84MADDM3XdA58rCryf+mLBHBoC1Ny+FkUXfVQdBWYRHVzzSWna3wsO3LzbxjNie3cvIv5ojQoRyuXSMq0I7JvlPkSou+T3jtscrUWxokgkNKRapKJRYnGdHYZGPzKE2UKPfOe+VfPI4kaQs61dcrLxzNTRFPriGRL7Crl4lOWx9Ks1o7dF4b9rp//NkxPQhU74MoDBM+92qX+PKRfc/ZNPVrryv6Cmr1ZXt7Gr3l6KVBgIgOQFySUqeu6jvX7dE43GU8P6B040UyY61PQDUBvLQ+SIS1RIoxlt8b3lSSmKIsaUmZf/1MEWiktE5qwpr2VlnPhuPaCWOrUDTH2aiDb31LOVbRef3i7yDe1dqn/eYmzW2wl7d9f9f//NkxOh084MAEDM3W+XePy8fcfJyiObffX01sz9bbu/a/fUoRFAHE5Xuct0Pa3tOZTrVCRd+Gfc+/lf0P6SksyvKZ7ZdZ79vPsjCPd70bprO22Og7F4m9H0FlOVYlk0D6R3e8WiWaeY2gWtlQFHPEagvBz4fXQll6xbF6a8ZTjsengy4z2yFLzoXl+dVmX+//NkxOwgM8oRaEBNFdj+/7Nr1bJoWUmpD92mnSpJmpp+Ijl7hNASQHiOPqVZlpumerKiGszTjpk1URLLz7GJoq5xXRdEfd0SiGdaTLmnv798U7zFinJYinmu2PmnZ3JB4ah5riEefVyjl24azDL2bUUqUUi01ls5RWTLoSDbC1OIT5e0/q2nYUe3Z7QP1p2K//NkxO4g+9IMADjM3bp6eptW/Hb0Um33ZorxKWKuLyWdPY32zZvl2fP8/neZRRgJxeXu85epvc1vhGanJ7VbmaA8JhVSqdd5nKSKNTEdF5Iv371lwLipPOlkbZ45SbweqJSc3qnWes8q2GJ4wnl0ZUtJKJ6mdhniUsMsx3KLqX2SOzmTHbty9zHqcIv2+6+Z//NkxO0irC4MADoNxf9723vf8bO2dVa8WjlYtICaKYdmqUICAwMJCDLZrJRNyu7mahUXcWYqcxjVaxEsbeOJmJRovS7shEIStpGYVq6XRDVU6xHArqBPzORNwR0eq7pCRmA+cR4maSi3zLm/gdYejProtslFZLPbZuW6nWk4qwTZ8xZz1M9V10mA//NkxOUd684QADhM3Kxp8clW7WO8TbVNPc4J1DD+5lQPzYt1S5jliCXSzHTHRS4/GhKAIAQeGIy1LrVVzo1bZpz2T3389Par23umt0ajH1bddp1QyJTuqjxlSHIHZovDGY51lw56NM+0qGbcdiCUlGO8t3gFUSyC9DWt2KlkPEJQYoJmgxLRLhTUzctoVY0r//NkxPka84IACpNyZLw5/nl8SO3+yA4QMVCI4NmCxjHkjIIFABplxAUAJB0atekfSJt81c5qGF4CkC/SURbGlNW6yTgJiIiIickQCVDmSKs91DW0szxEzD9aUkpdoKt5IjStZQkmbhHxf4qI4sHI5pAyvkmlF1qQXTrdLaPJtkhOozMZTMpeyhdghlh66tVkW7uoNpfHk//9v9v++SySQCmAIA7srfsjq2fU80147/P9/afuu3vsW2tfb//39z9ryu+Y8S2u6mWu2z+sx+/1v+pWVWsT59XxJWTMnHpFbvJhRvfJatNgxpuqumpIle3LhVGssahetak3fiGeGlDUtSuuzTnhle12beT//NkxOEEg6gAAnJzR1s//7t5drw5rVHim6JelIU0ovvOYs6Lk/yZ3zwkKi8RCpZz8cqeBAkiQrv7aYerxnHzWUo/DWjkFJVx4/Wllv3UPTL/ZuITl89t9jm/s+9O/Hfttk0tVyLI3Yv/2c9afFx8dBeVkFqzKQgP6JKcedVDy3dS6JAKlgpj8dnYkLh1G5M//NkxI7O5CIMAY9gAdbWl3//zmv/+23+CaymK3M2rU2uaVbrZlulIJjvBe3VyKuZ89e0UzNn4z8QBeSh0H+z0JVMS+YmJY21EpwwJTKcSCYTioPi4mDBIOCgrEkrVQKyoxDdEZGW1pNOk6g+EtsfS0ZC00SBQaEgSIiga3BozcSHR6HKpIXOQGTzTSZf//NkxJGUdDoMAYtgAV59r22w/vd//PNv6//z/j//r+sqF1Ks93c7/8P/4fdjf//nXr+fv7C/EjJwQDDD/fk0siFSfh1Gy8L//NkxEQiskChwriUgBcVCAEwujDAkWgZYHyEQokSXJg0Mkoho2QQmo25tHhDw2RgQgJF2WRObaEmOaWYtYiJiclFLPzhUKlWV1Ep9XbQ5uTglGC5G2xUKSMCsjbQN792v1flokSJVlOUXetiP9/tKFbSSqUEfMD9oBQKFyBoKQSZ1Z9vW/j/jj/7u/mP/h+eb//NkxBghO8IpaYVAAbjXv57r+5r+Pf/rv/rX6QhBe7rrKqED4bH6szz4oQh7lWNPCgqIIwTyULHEyR3Fx7TLoxBlwQHz9mDrHdC5ZIclFB89DLNFYFuG1rdYqqnu5h6npEd5d5FKn/9hpstI0oWD5aGKd9/vahOtK/cAlgCi5BRX0WqItE6We33Oz58f/v/v//NkxBYhE8oZYcUwAO7f/f////nbvu////+Pv9+M+9o/7f98/djc3MKtXdtUqnnUDk0UKWyUmfI0t+QCjSULg4v1K6s1blW5VXFyx+UcaqyJVqXWlHzUxaUteNJ17lPm5Vvm4U/bN+/XQrJMfK5hOZp319POMF2LHv9aFQWiWQMMVdGfd9Np5o81xooJE7Go//NkxBQgI84QADhM3SC0eJTcB1RzIzAJrLuTEVf9tbNWiUj9KNMpzrajWohRFhSKvGF0p2OBXOAjzYOv4kdAvto1WpagzSlhRrOegcxNzHmfR3U77+Ye9Y0vj91Y369xr9d5rzqXjvllrsCsljP2oS/1cZ176eY3mzUAQEDRLIEDKq2tHvv+9VWQ6a9vSsm7//NkxBYas6YV4DlHHXtT0S969/as6ys+ZnmY9HQ4xysWbRSnKFOwsJs6uyQ/ZVDahcPkzkxJSzBQaUirZ0/jlm/dYqw4Xtcoasfm+pZfnoV5bF6ZfpgIg+TYOu+z8/M1/GkGkLSOUo+nXvW679Jaq61d0ZC8m10Vf29Zqz6I1Gr5CG6yuxpWR6jSlV4WhrHI//NkxC4bc6IQAGlG/eyCukeakSAzIyF7HbTIMaOZkDQFJw5dkOaHOH3Pt84nc9OIs8Ne+XyEUJ3f61O5+9nQyjKTMM/7Qjv+nBQY62kDJBORimqk39aWoNRSMEZIQhH9h1tMLvkDBsso8lNPrZvelX0yKrT5zs3sXYvqx66PjmdqclIadMDjaeo5tdHtZavY//NkxEMaIvIQAGhGnZkSfeoX5d5aYVzrcMfqbDzuFC/2His/fEbuAVsvYwKM/atN25ulCwIgqTwfvI8wpWZZY8MllhlwzzJrHImWGhkbKXk3s21QVeqXw1nSMv1OHnsrdLJtq2ar/+xq350uNQQPS1pFzYMgJsNCIJCw4Dc6JDwzCQ+AiICFnnlA1qPUA0DR//NkxF0aofYQMnjGIKCoi4iPf5NRKSCRI8IlQagNAGD4oNueysqnDU0ayUjI1a1DIyZQQIHDQFCosDho1/U02LCxIGQkLCzXjGxYy2LN1s6hdmLCvF9ISFTNQuzFRbULsxgr/6hYXDOLez+LC7qhYVMxZqpMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqq//NkxHUWCJWwHEhGYKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+var shuakaBase64Audio = "data:audio/mpeg;base64,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чко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";
 
 var shiftHours = {
   "一值1": 9, "一值2": 9, "一值3": 9,
@@ -833,7 +783,7 @@ var lunarInfo = [
   0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
   0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
   0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
-  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aaef,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,1a6c4,0x0aaef,
   0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
   0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
   0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x04b55,0x04b60,0x0a570,0x054e4,0x0d260,
@@ -852,95 +802,18 @@ var RotatblB=["二值1","二值2","二值3","一值1","一值2","一值3","大�
 var RotatblC=["三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3","大空1","大空2","三值1"];
 var RotatblD=["大空1","大空2","三值1","三值2","三值3","小空1","二值1","二值2","二值3","一值1","一值2","一值3"];
 
-var sFtv = [
-  "0101*元旦", "0228*和平日", "0501*勞動節", "0928*教師節", "1010*國慶日", "1025*光復節", "1225*行憲日"
-];
-var lFtv = [
-  "0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"
-];
+var sFtv = ["0101*元旦", "0228*和平日", "0501*勞動節", "0928*教師節", "1010*國慶日", "1025*光復節", "1225*行憲日"];
+var lFtv = ["0100*除夕", "0101*春節", "0102*春節", "0103*春節", "0505*端午節", "0815*中秋節"];
 
 function exitApp() {
   try {
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
       window.Capacitor.Plugins.App.exitApp();
-    } else if (navigator.app && typeof navigator.app.exitApp === 'function') {
-      navigator.app.exitApp();
-    } else if (navigator.device && typeof navigator.device.exitApp === 'function') {
-      navigator.device.exitApp();
-    } else if (window.Android && typeof window.Android.exitApp === 'function') {
-      window.Android.exitApp();
     } else {
       window.close();
     }
   } catch (e) {
-    console.error("Exit App Error:", e);
     window.close();
-  }
-}
-
-function loadBase64AudioBuffer() {
-  try {
-    if (!globalAudioCtx) {
-      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    var base64Data = shuakaBase64Audio.split(',')[1];
-    var binaryString = window.atob(base64Data);
-    var len = binaryString.length;
-    var bytes = new Uint8Array(len);
-    for (var i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    globalAudioCtx.decodeAudioData(bytes.buffer, function(buffer) {
-      decodedAudioBuffer = buffer;
-    }, function(e) {
-      console.error("Error decoding audio data", e);
-    });
-  } catch(e) {
-    console.error("Load audio buffer error:", e);
-  }
-}
-
-function speakShuakaVoice() {
-  try {
-    if (!globalAudioCtx) {
-      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (globalAudioCtx.state === 'suspended') {
-      globalAudioCtx.resume();
-    }
-    
-    if (decodedAudioBuffer) {
-      var source = globalAudioCtx.createBufferSource();
-      source.buffer = decodedAudioBuffer;
-      var gainNode = globalAudioCtx.createGain();
-      gainNode.gain.setValueAtTime(3.0, globalAudioCtx.currentTime);
-      source.connect(gainNode);
-      gainNode.connect(globalAudioCtx.destination);
-      source.start(0);
-    } else {
-      var base64Data = shuakaBase64Audio.split(',')[1];
-      var binaryString = window.atob(base64Data);
-      var len = binaryString.length;
-      var bytes = new Uint8Array(len);
-      for (var i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      var blob = new Blob([bytes], { type: 'audio/mpeg' });
-      var blobUrl = URL.createObjectURL(blob);
-
-      if (currentAudioObj) {
-        currentAudioObj.pause();
-        currentAudioObj = null;
-      }
-      var a = new Audio(blobUrl);
-      a.volume = 1.0;
-      currentAudioObj = a;
-      a.play().catch(function(e) {
-        console.warn("Blob Audio play warning:", e);
-      });
-    }
-  } catch(e) {
-    console.error("Base64 audio error:", e);
   }
 }
 
@@ -952,81 +825,34 @@ function unlockAudioEngine() {
     if (globalAudioCtx.state === 'suspended') {
       globalAudioCtx.resume();
     }
-  } catch(e) {
-    console.error("Unlock audio error:", e);
-  }
+  } catch(e) {}
 }
 
-async function initLocalNotifications() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-    try {
-      const perm = await window.Capacitor.Plugins.LocalNotifications.checkPermissions();
-      if (perm.display !== 'granted') {
-        await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-      }
-
-      if (window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
-        await window.Capacitor.Plugins.LocalNotifications.createChannel({
-          id: 'alarm_high_importance',
-          name: '值班鬧鐘',
-          description: '高優先度值班鬧鐘提醒',
-          importance: 5,
-          visibility: 1,
-          vibration: true,
-          sound: null
-        });
-      }
-
-      await window.Capacitor.Plugins.LocalNotifications.registerActionTypes({
-        types: [
-          {
-            id: 'ALARM_ACTIONS',
-            actions: [
-              {
-                id: 'DISMISS_ALARM',
-                title: '🛑 關閉鬧鐘',
-                foreground: true
-              }
-            ]
-          }
-        ]
-      });
-      
-      window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', function(notification) {
-        var actionId = notification.actionId;
-        if (actionId === 'DISMISS_ALARM') {
-          stopAlarm();
-        } else {
-          var extra = notification.notification.extra;
-          if (extra && extra.soundType) {
-            triggerAlarmModal(notification.notification.title || '值班鬧鐘', extra.shiftName || '值班', extra.soundType);
-          }
-        }
-      });
-
-      window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationReceived', function(notification) {
-        var extra = notification.extra;
-        triggerAlarmModal(notification.title || '值班鬧鐘', extra ? extra.shiftName : '值班', extra ? extra.soundType : 'shuaka');
-      });
-    } catch(e) {
-      console.log("LocalNotifications Init Error:", e);
-    }
-  }
-}
-
-async function syncLocalNotifications() {
-  if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.LocalNotifications) return;
-  var LN = window.Capacitor.Plugins.LocalNotifications;
+function speakShuakaVoice() {
   try {
-    const pending = await LN.getPending();
-    if (pending && pending.notifications && pending.notifications.length > 0) {
-      await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+    unlockAudioEngine();
+    if (currentAudioObj) {
+      currentAudioObj.pause();
+      currentAudioObj = null;
     }
+    var a = new Audio(shuakaBase64Audio);
+    a.volume = 1.0;
+    currentAudioObj = a;
+    a.play().catch(function(e) {
+      console.warn("Audio play warning:", e);
+    });
+  } catch(e) {
+    console.error("Base64 audio error:", e);
+  }
+}
 
-    var notificationsToSchedule = [];
+// 串接原生 AlarmPlugin 進行鬧鐘同步排程
+async function syncNativeAlarms() {
+  if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.AlarmPlugin) return;
+  var AlarmPlugin = window.Capacitor.Plugins.AlarmPlugin;
+  try {
     var now = new Date();
-
-    alarms.forEach(function(a) {
+    alarms.forEach(async function(a) {
       if (!a.enabled) return;
 
       var parts = a.time.split(':');
@@ -1046,27 +872,16 @@ async function syncLocalNotifications() {
       var shiftName = getShiftNameForDate(targetDate);
 
       if (a.shifts.includes(shiftName)) {
-        for (var repeatOffset = 0; repeatOffset < 3; repeatOffset++) {
-          var scheduledTime = new Date(notifDate.getTime() + repeatOffset * 30000);
-          notificationsToSchedule.push({
-            id: a.id + repeatOffset,
-            title: a.title || '值班鬧鐘',
-            body: '【' + shiftName + '】時間到！請點擊下方的「關閉鬧鐘」或進入畫面確認',
-            channelId: 'alarm_high_importance',
-            actionTypeId: 'ALARM_ACTIONS',
-            schedule: { at: scheduledTime, allowWhileIdle: true },
-            sound: null,
-            extra: { soundType: a.sound || 'shuaka', shiftName: shiftName }
-          });
-        }
+        await AlarmPlugin.scheduleAlarm({
+          triggerMillis: notifDate.getTime(),
+          title: a.title || '值班鬧鐘',
+          shiftName: shiftName,
+          sound: a.sound || 'shuaka'
+        });
       }
     });
-
-    if (notificationsToSchedule.length > 0) {
-      await LN.schedule({ notifications: notificationsToSchedule });
-    }
   } catch(e) {
-    console.error("Sync Local Notifications Error:", e);
+    console.error("Sync Native Alarms Error:", e);
   }
 }
 
@@ -1074,12 +889,9 @@ function previewAlarmSound() {
   unlockAudioEngine();
   var soundType = document.getElementById('newAlarmSound').value;
   stopAlarmSoundOnly();
-  if (previewTimeout) {
-    clearTimeout(previewTimeout);
-  }
+  if (previewTimeout) clearTimeout(previewTimeout);
   
   playAlarmSound(soundType);
-  
   previewTimeout = setTimeout(function() {
     stopAlarmSoundOnly();
   }, 2500);
@@ -1088,12 +900,11 @@ function previewAlarmSound() {
 function playAlarmSound(type) {
   stopAlarmSoundOnly();
   unlockAudioEngine();
-  
   var soundType = type || 'shuaka';
 
   if (soundType === 'shuaka') {
     speakShuakaVoice();
-    alarmInterval = setInterval(speakShuakaVoice, 1800);
+    alarmInterval = setInterval(speakShuakaVoice, 2000);
     return;
   }
 
@@ -1102,25 +913,15 @@ function playAlarmSound(type) {
       if (!globalAudioCtx) {
         globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      if (globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume().then(function() {
-          executeAudioNotes(soundType, globalAudioCtx);
-        });
-      } else {
-        executeAudioNotes(soundType, globalAudioCtx);
-      }
-    } catch(e) {
-      console.error("Audio playback error:", e);
-    }
+      executeAudioNotes(soundType, globalAudioCtx);
+    } catch(e) {}
   }
-
   playCycle();
   alarmInterval = setInterval(playCycle, 1500); 
 }
 
 function executeAudioNotes(type, audioCtx) {
   var now = audioCtx.currentTime;
-  
   var masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(1.5, now);
   masterGain.connect(audioCtx.destination);
@@ -1134,10 +935,8 @@ function executeAudioNotes(type, audioCtx) {
       osc.frequency.setValueAtTime(freq, now + idx * 0.1);
       gain.gain.setValueAtTime(0.8, now + idx * 0.1);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.6);
-      osc.connect(gain);
-      gain.connect(masterGain);
-      osc.start(now + idx * 0.1);
-      osc.stop(now + idx * 0.1 + 0.6);
+      osc.connect(gain); gain.connect(masterGain);
+      osc.start(now + idx * 0.1); osc.stop(now + idx * 0.1 + 0.6);
     });
   } else if (type === 'beep') {
     for (var i = 0; i < 4; i++) {
@@ -1147,10 +946,8 @@ function executeAudioNotes(type, audioCtx) {
       osc.frequency.setValueAtTime(880, now + i * 0.2);
       gain.gain.setValueAtTime(1.0, now + i * 0.2);
       gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.1);
-      osc.connect(gain);
-      gain.connect(masterGain);
-      osc.start(now + i * 0.2);
-      osc.stop(now + i * 0.2 + 0.1);
+      osc.connect(gain); gain.connect(masterGain);
+      osc.start(now + i * 0.2); osc.stop(now + i * 0.2 + 0.1);
     }
   } else if (type === 'chime') {
     var notes = [523.25, 659.25, 783.99, 1046.50]; 
@@ -1161,10 +958,8 @@ function executeAudioNotes(type, audioCtx) {
       osc.frequency.setValueAtTime(freq, now + idx * 0.15);
       gain.gain.setValueAtTime(0.9, now + idx * 0.15);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.4);
-      osc.connect(gain);
-      gain.connect(masterGain);
-      osc.start(now + idx * 0.15);
-      osc.stop(now + idx * 0.15 + 0.4);
+      osc.connect(gain); gain.connect(masterGain);
+      osc.start(now + idx * 0.15); osc.stop(now + idx * 0.15 + 0.4);
     });
   } else if (type === 'siren') {
     var osc = audioCtx.createOscillator();
@@ -1175,33 +970,19 @@ function executeAudioNotes(type, audioCtx) {
     osc.frequency.linearRampToValueAtTime(500, now + 0.8);
     gain.gain.setValueAtTime(0.8, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-    osc.connect(gain);
-    gain.connect(masterGain);
-    osc.start(now);
-    osc.stop(now + 0.8);
+    osc.connect(gain); gain.connect(masterGain);
+    osc.start(now); osc.stop(now + 0.8);
   }
 }
 
 function stopAlarmSoundOnly() {
-  if (alarmInterval) {
-    clearInterval(alarmInterval);
-    alarmInterval = null;
-  }
-  if (currentAudioObj) {
-    currentAudioObj.pause();
-    currentAudioObj = null;
-  }
+  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+  if (currentAudioObj) { currentAudioObj.pause(); currentAudioObj = null; }
 }
 
 function triggerAlarmModal(title, shiftName, soundType) {
   unlockAudioEngine();
-  loadBase64AudioBuffer();
-
-  localStorage.setItem('pending_alarm_trigger', JSON.stringify({
-    title: title,
-    shiftName: shiftName,
-    soundType: soundType || 'shuaka'
-  }));
+  localStorage.setItem('pending_alarm_trigger', JSON.stringify({ title: title, shiftName: shiftName, soundType: soundType || 'shuaka' }));
 
   var modal = document.getElementById('alarmTriggerModal');
   var titleEl = document.getElementById('alarmTriggerTitle');
@@ -1220,12 +1001,8 @@ function checkPendingAlarmTrigger() {
   if (pending) {
     try {
       var data = JSON.parse(pending);
-      setTimeout(function() {
-        triggerAlarmModal(data.title, data.shiftName, data.soundType);
-      }, 100);
-    } catch(e) {
-      console.error("Check pending alarm error:", e);
-    }
+      setTimeout(function() { triggerAlarmModal(data.title, data.shiftName, data.soundType); }, 100);
+    } catch(e) {}
   }
 }
 
@@ -1248,9 +1025,7 @@ function checkAlarmsRealtime() {
     if (a.time === currentHHMM) {
       var advanceDays = parseInt(a.timing || 0, 10);
       var targetDate = new Date(now);
-      if (advanceDays > 0) {
-        targetDate.setDate(targetDate.getDate() + advanceDays);
-      }
+      if (advanceDays > 0) targetDate.setDate(targetDate.getDate() + advanceDays);
       var shiftName = getShiftNameForDate(targetDate);
       if (a.shifts.includes(shiftName)) {
         lastTriggeredMinute = currentHHMM;
@@ -1318,9 +1093,7 @@ function solarDays(y,m) {
   else return(solarMonth[m]);
 }
 
-function cyclical(num) {
-  return(Gan[num%10]+Zhi[num%12]);
-}
+function cyclical(num) { return(Gan[num%10]+Zhi[num%12]); }
 
 function getShiftNameForDate(targetDate) {
   var y = targetDate.getFullYear();
@@ -1361,17 +1134,13 @@ function getCalendarData(y, m) {
      if(rota < 0) rota += 12;
 
      extDays.push({
-       origI: i,
-       isToday: (sDObj.getFullYear() == tY && sDObj.getMonth() == tM && sDObj.getDate() == tD),
+       origI: i, isToday: (sDObj.getFullYear() == tY && sDObj.getMonth() == tM && sDObj.getDate() == tD),
        sYear: sDObj.getFullYear(), sMonth: sDObj.getMonth() + 1, sDay: sDObj.getDate(),
-       week: sDObj.getDay(),
-       weekText: nStr1[sDObj.getDay()],
-       rota: rota,
+       week: sDObj.getDay(), weekText: nStr1[sDObj.getDay()], rota: rota,
        lYear: lDObj.year, lMonth: lDObj.month, lDay: lDObj.day, isLeap: lDObj.isLeap,
        cYear: cY, cMonth: cM, cDay: cD,
        color: '', lunarFestival: '', solarFestival: '',
-       isHoliday: false, isOriginalHoliday: false, isMakeupHoliday: false, noMakeup: false,
-       isPayday: false
+       isHoliday: false, isOriginalHoliday: false, isMakeupHoliday: false, noMakeup: false, isPayday: false
      });
   }
 
@@ -1406,41 +1175,9 @@ function getCalendarData(y, m) {
 
      if(d.sMonth === 4) {
         var qmDay = getQingMingDay(d.sYear);
-        if(qmDay === 4) {
-           var targetCheckObj = extDays.find(function(item) { return item.sYear === d.sYear && item.sMonth === 4 && item.sDay === 4; });
-           if (targetCheckObj && targetCheckObj.week === 4) {
-              if(d.sDay === 4) { d.solarFestival += "兒童節 清明節 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
-              else if(d.sDay === 5) { d.solarFestival += "補假 "; d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isMakeupHoliday = true; }
-           } else {
-              if(d.sDay === 3 || d.sDay === 4) { d.solarFestival += (d.sDay===3?"兒童節 ":"清明節 "); d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
-           }
-        } else {
-           if(d.sDay === 4 || d.sDay === qmDay) { d.solarFestival += (d.sDay===4?"兒童節 ":"清明節 "); d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true; }
-        }
-     }
-  }
-
-  for(var j = 0; j < extDays.length; j++) {
-     var d = extDays[j];
-     if(d.isOriginalHoliday && !d.noMakeup && (d.week === 6 || d.week === 0)) {
-        var targetIdx = -1;
-        var isSpringFest = d.lunarFestival.includes("小年夜") || d.lunarFestival.includes("除夕") || d.lunarFestival.includes("春節");
-        
-        if (isSpringFest) {
-           targetIdx = j + 1;
-           while(targetIdx < extDays.length && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx++;
-        } else if(d.week === 6) {
-           targetIdx = j - 1;
-           while(targetIdx >= 0 && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx--;
-        } else if(d.week === 0) {
-           targetIdx = j + 1;
-           while(targetIdx < extDays.length && (extDays[targetIdx].isOriginalHoliday || extDays[targetIdx].isHoliday || extDays[targetIdx].week === 0 || extDays[targetIdx].week === 6)) targetIdx++;
-        }
-        
-        if(targetIdx >= 0 && targetIdx < extDays.length) {
-           extDays[targetIdx].solarFestival += "補假 ";
-           extDays[targetIdx].color = 'var(--accent-holiday)';
-           extDays[targetIdx].isHoliday = true; extDays[targetIdx].isMakeupHoliday = true;
+        if(d.sDay === 4 || d.sDay === qmDay) {
+           d.solarFestival += (d.sDay === 4 ? "兒童節 " : "清明節 ");
+           d.color = 'var(--accent-holiday)'; d.isHoliday = true; d.isOriginalHoliday = true;
         }
      }
   }
@@ -1448,19 +1185,13 @@ function getCalendarData(y, m) {
   var targetPayIdx = -1;
   for(var j = 0; j < extDays.length; j++) {
      if (extDays[j].sYear === y && (extDays[j].sMonth - 1) === m && extDays[j].sDay === 6) {
-        targetPayIdx = j;
-        break;
+        targetPayIdx = j; break;
      }
   }
-
   if (targetPayIdx !== -1) {
      while (targetPayIdx >= 0) {
         var cur = extDays[targetPayIdx];
-        var isWeekend = (cur.week === 0 || cur.week === 6);
-        if (!isWeekend && !cur.isHoliday) {
-           cur.isPayday = true;
-           break;
-        }
+        if (cur.week !== 0 && cur.week !== 6 && !cur.isHoliday) { cur.isPayday = true; break; }
         targetPayIdx--;
      }
   }
@@ -1474,9 +1205,7 @@ function getCalendarData(y, m) {
 
 function cDay(d){
   switch (d) {
-     case 10: return '初十';
-     case 20: return '二十';
-     case 30: return '三十';
+     case 10: return '初十'; case 20: return '二十'; case 30: return '三十';
      default : return nStr2[Math.floor(d/10)] + nStr1[d%10];
   }
 }
@@ -1495,7 +1224,6 @@ function updateShiftButtonsUI() {
       if(s === currentShift) btn.classList.add('active');
       else btn.classList.remove('active');
     }
-    
     var row = document.getElementById('row' + s);
     if(row) {
       if(s === currentShift) row.classList.add('selected-row');
@@ -1508,8 +1236,7 @@ function drawCld(SY,SM) {
   var titleElem = document.getElementById("panelTitle");
   if(titleElem) {
      var rocYear = SY - 1911;
-     var displayMonth = SM + 1;
-     titleElem.innerText = "民國 " + rocYear + " 年 " + displayMonth + " 月 工時統計";
+     titleElem.innerText = "民國 " + rocYear + " 年 " + (SM + 1) + " 月 工時統計";
   }
 
   currentCalData = getCalendarData(SY,SM);
@@ -1519,6 +1246,16 @@ function drawCld(SY,SM) {
   var holHoursA = 0, holHoursB = 0, holHoursC = 0, holHoursD = 0;
   var handHoursA = 0, handHoursB = 0, handHoursC = 0, handHoursD = 0;
 
+  // 動態根據當月週數調整表格行數 (隱藏或顯示第 6 行)
+  var totalCellsNeeded = currentCalData.firstWeek + currentCalData.length;
+  var totalRows = totalCellsNeeded > 35 ? 6 : 5;
+  for(var r=0; r<6; r++) {
+    var rowElem = document.getElementById('rowGrid' + r);
+    if(rowElem) {
+      rowElem.style.display = (r < totalRows) ? '' : 'none';
+    }
+  }
+
   for(var i=0; i<42; i++) {
      var sObj = document.getElementById('SD'+ i);
      var lObj = document.getElementById('LD'+ i);
@@ -1527,7 +1264,6 @@ function drawCld(SY,SM) {
      var cellObj = document.getElementById('cell'+ i);
 
      if(!sObj || !lObj) continue;
-
      sObj.className = 'sd-text';
      if (cellObj) cellObj.classList.remove('cell-has-future-note');
 
@@ -1539,17 +1275,14 @@ function drawCld(SY,SM) {
         if(dObj.isToday) sObj.className = 'sd-text todyaColor';
         sObj.style.color = dObj.isToday ? '#fff' : (dObj.color || (i%7===0 ? 'var(--accent-holiday)' : (i%7===6 ? 'var(--accent-saturday)' : 'var(--text-main)')));
 
-        var r = dObj.rota;
-        var hA = shiftHours[RotatblA[r]] || 0;
-        var hB = shiftHours[RotatblB[r]] || 0;
-        var hC = shiftHours[RotatblC[r]] || 0;
-        var hD = shiftHours[RotatblD[r]] || 0;
+        var r_idx = dObj.rota;
+        var hA = shiftHours[RotatblA[r_idx]] || 0;
+        var hB = shiftHours[RotatblB[r_idx]] || 0;
+        var hC = shiftHours[RotatblC[r_idx]] || 0;
+        var hD = shiftHours[RotatblD[r_idx]] || 0;
 
         totalHoursA += hA; totalHoursB += hB; totalHoursC += hC; totalHoursD += hD;
-        if(hA > 0) handHoursA += 0.5;
-        if(hB > 0) handHoursB += 0.5;
-        if(hC > 0) handHoursC += 0.5;
-        if(hD > 0) handHoursD += 0.5;
+        if(hA > 0) handHoursA += 0.5; if(hB > 0) handHoursB += 0.5; if(hC > 0) handHoursC += 0.5; if(hD > 0) handHoursD += 0.5;
 
         if(dObj.week !== 0 && dObj.week !== 6 && !dObj.isHoliday) workDays++;
         if(dObj.isHoliday && !dObj.isMakeupHoliday) { 
@@ -1572,41 +1305,27 @@ function drawCld(SY,SM) {
            if (currentShift === 'B') targetShiftTable = RotatblB;
            else if (currentShift === 'C') targetShiftTable = RotatblC;
            else if (currentShift === 'D') targetShiftTable = RotatblD;
-           shiftObj.innerHTML = targetShiftTable[r];
+           shiftObj.innerHTML = targetShiftTable[r_idx];
         }
 
         var dateKey = dObj.sYear + '-' + (dObj.sMonth < 10 ? '0' : '') + dObj.sMonth + '-' + (dObj.sDay < 10 ? '0' : '') + dObj.sDay;
         var savedNote = localStorage.getItem('note_' + currentShift + '_' + dateKey);
-        
         var isPastDate = dateKey < todayDateStr;
 
         if (noteObj) {
           if (savedNote) {
-            // 超過 3 個字則補上「…」，剛好呈現 4 個字
-            if (savedNote.length > 3) {
-              noteObj.innerText = savedNote.slice(0, 3) + '…';
-            } else {
-              noteObj.innerText = savedNote;
-            }
+            noteObj.innerText = savedNote.length > 3 ? savedNote.slice(0, 3) + '…' : savedNote;
             noteObj.style.display = 'block';
-            
-            if (isPastDate) {
-              noteObj.className = 'note-indicator note-past';
-            } else {
-              noteObj.className = 'note-indicator note-future';
-              if (cellObj) cellObj.classList.add('cell-has-future-note');
-            }
+            noteObj.className = isPastDate ? 'note-indicator note-past' : 'note-indicator';
+            if (!isPastDate && cellObj) cellObj.classList.add('cell-has-future-note');
           } else {
             noteObj.innerText = '';
             noteObj.style.display = 'none';
-            noteObj.className = 'note-indicator';
           }
         }
 
         cellObj.onclick = (function(key, year, month, day) {
-           return function() { 
-              openModal(key, year, month, day);
-           };
+           return function() { openModal(key, year, month, day); };
         })(dateKey, dObj.sYear, dObj.sMonth, dObj.sDay);
 
      } else {
@@ -1640,16 +1359,6 @@ function drawCld(SY,SM) {
   document.getElementById("diffB").innerText = (netB - officeHours);
   document.getElementById("diffC").innerText = (netC - officeHours);
   document.getElementById("diffD").innerText = (netD - officeHours);
-
-  var totalCellsNeeded = currentCalData.firstWeek + currentCalData.length;
-  var row5Elem = document.getElementById('rowGrid5');
-  if (row5Elem) {
-    if (totalCellsNeeded > 35) {
-      row5Elem.style.display = '';
-    } else {
-      row5Elem.style.display = 'none';
-    }
-  }
 }
 
 function updateCalendar() {
@@ -1676,147 +1385,68 @@ function changeM(dir) {
 
 function bindSwipeGesture(wrapperElem, animatedElem) {
   if (!wrapperElem || !animatedElem) return;
-
-  var startX = 0, startY = 0;
-  var currentX = 0, currentY = 0;
-  var isDragging = false;
-
-  function handleStart(x, y) {
-    startX = x;
-    startY = y;
-    currentX = x;
-    currentY = y;
-    isDragging = true;
-    animatedElem.style.transition = 'none';
-  }
-
-  function handleMove(x, y) {
-    if (!isDragging) return;
-    currentX = x;
-    currentY = y;
-    var diffX = currentX - startX;
-    var diffY = currentY - startY;
-
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      animatedElem.style.transform = 'translateX(' + diffX + 'px)';
-      animatedElem.style.opacity = 1 - (Math.abs(diffX) / 400);
-    }
-  }
-
-  function handleEnd() {
-    if (!isDragging) return;
-    isDragging = false;
-    var diffX = currentX - startX;
-    var diffY = currentY - startY;
-
-    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-      var dir = diffX < 0 ? 1 : -1;
-      
-      animatedElem.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
-      animatedElem.style.transform = 'translateX(' + (dir > 0 ? -100 : 100) + '%)';
-      animatedElem.style.opacity = '0';
-
-      setTimeout(function() {
-        changeM(dir);
-        animatedElem.style.transition = 'none';
-        animatedElem.style.transform = 'translateX(' + (dir > 0 ? 100 : -100) + '%)';
-        
-        setTimeout(function() {
-          animatedElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-          animatedElem.style.transform = 'translateX(0)';
-          animatedElem.style.opacity = '1';
-        }, 20);
-      }, 150);
-    } else {
-      animatedElem.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-      animatedElem.style.transform = 'translateX(0)';
-      animatedElem.style.opacity = '1';
-    }
-  }
+  var startX = 0, startY = 0, currentX = 0, isDragging = false;
 
   wrapperElem.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 1) {
-      handleStart(e.touches[0].clientX, e.touches[0].clientY);
-    }
+    if (e.touches.length === 1) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; currentX = startX; isDragging = true; }
   }, { passive: true });
 
   wrapperElem.addEventListener('touchmove', function(e) {
-    if (e.touches.length === 1) {
-      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    if (!isDragging || e.touches.length !== 1) return;
+    currentX = e.touches[0].clientX;
+    var diffX = currentX - startX;
+    if (Math.abs(diffX) > Math.abs(currentX - startX)) {
+      animatedElem.style.transform = 'translateX(' + diffX + 'px)';
     }
   }, { passive: true });
 
-  wrapperElem.addEventListener('touchend', handleEnd, { passive: true });
-
-  wrapperElem.addEventListener('mousedown', function(e) {
-    handleStart(e.clientX, e.clientY);
-  });
-
-  window.addEventListener('mousemove', function(e) {
-    if (isDragging) handleMove(e.clientX, e.clientY);
-  });
-
-  window.addEventListener('mouseup', function() {
-    if (isDragging) handleEnd();
-  });
+  wrapperElem.addEventListener('touchend', function() {
+    if (!isDragging) return;
+    isDragging = false;
+    var diffX = currentX - startX;
+    if (Math.abs(diffX) > 50) {
+      var dir = diffX < 0 ? 1 : -1;
+      changeM(dir);
+    }
+    animatedElem.style.transform = 'translateX(0)';
+  }, { passive: true });
 }
 
 function initSwipeGesture() {
-  bindSwipeGesture(
-    document.getElementById('calSwipeWrapper'),
-    document.getElementById('mainCalTable')
-  );
-  bindSwipeGesture(
-    document.getElementById('tab-stats'),
-    document.getElementById('statsSwipeWrapper')
-  );
+  bindSwipeGesture(document.getElementById('calSwipeWrapper'), document.getElementById('mainCalTable'));
+  bindSwipeGesture(document.getElementById('tab-stats'), document.getElementById('statsSwipeWrapper'));
 }
 
 function openModal(dateKey, year, month, day) {
   selectedDateKey = dateKey;
-  var rocYear = year - 1911;
-  document.getElementById('modalTitle').innerText = '民國 ' + rocYear + ' 年 ' + month + ' 月 ' + day + ' 日 (' + currentShift + '班) 備註';
-  var currentNote = localStorage.getItem('note_' + currentShift + '_' + dateKey) || '';
-  document.getElementById('noteInput').value = currentNote;
+  document.getElementById('modalTitle').innerText = '民國 ' + (year - 1911) + ' 年 ' + month + ' 月 ' + day + ' 日 (' + currentShift + '班) 備註';
+  document.getElementById('noteInput').value = localStorage.getItem('note_' + currentShift + '_' + dateKey) || '';
   document.getElementById('noteModal').classList.add('active');
 }
 
-function closeModal() {
-  document.getElementById('noteModal').classList.remove('active');
-}
+function closeModal() { document.getElementById('noteModal').classList.remove('active'); }
 
 function saveNote() {
   var val = document.getElementById('noteInput').value.trim();
-  var noteStorageKey = 'note_' + currentShift + '_' + selectedDateKey;
-  if (val) {
-    localStorage.setItem(noteStorageKey, val);
-  } else {
-    localStorage.removeItem(noteStorageKey);
-  }
-  closeModal();
-  updateCalendar();
+  var key = 'note_' + currentShift + '_' + selectedDateKey;
+  if (val) localStorage.setItem(key, val); else localStorage.removeItem(key);
+  closeModal(); updateCalendar();
 }
 
 function switchTab(tabName, el) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   
-  if(tabName === 'calendar') {
-     document.getElementById('tab-calendar').classList.add('active');
-  } else if(tabName === 'stats') {
-     document.getElementById('tab-stats').classList.add('active');
-  } else if(tabName === 'alarm') {
-     renderAlarmList();
-     document.getElementById('tab-alarm').classList.add('active');
-  } else if(tabName === 'help') {
-     document.getElementById('tab-help').classList.add('active');
-  }
+  if(tabName === 'calendar') document.getElementById('tab-calendar').classList.add('active');
+  else if(tabName === 'stats') document.getElementById('tab-stats').classList.add('active');
+  else if(tabName === 'alarm') { renderAlarmList(); document.getElementById('tab-alarm').classList.add('active'); }
+  else if(tabName === 'help') document.getElementById('tab-help').classList.add('active');
   el.classList.add('active');
 }
 
 function saveAlarms() {
   localStorage.setItem('shift_alarms', JSON.stringify(alarms));
-  syncLocalNotifications();
+  syncNativeAlarms();
 }
 
 function addAlarm() {
@@ -1832,87 +1462,50 @@ function addAlarm() {
 
   if (!timeVal || selectedShifts.length === 0) return;
 
-  var newAlarm = {
-    id: Date.now(),
-    time: timeVal,
-    title: titleVal,
-    sound: soundVal,
-    timing: timingVal,
-    shifts: selectedShifts,
-    enabled: true
-  };
-
-  alarms.push(newAlarm);
-  saveAlarms();
-  renderAlarmList();
+  alarms.push({ id: Date.now(), time: timeVal, title: titleVal, sound: soundVal, timing: timingVal, shifts: selectedShifts, enabled: true });
+  saveAlarms(); renderAlarmList();
   document.getElementById('newAlarmTitle').value = '';
 }
 
 function toggleAlarm(id) {
   var alarm = alarms.find(a => a.id === id);
-  if (alarm) {
-    alarm.enabled = !alarm.enabled;
-    saveAlarms();
-    renderAlarmList();
-  }
+  if (alarm) { alarm.enabled = !alarm.enabled; saveAlarms(); renderAlarmList(); }
 }
 
 function deleteAlarm(id) {
   alarms = alarms.filter(a => a.id !== id);
-  saveAlarms();
-  renderAlarmList();
+  saveAlarms(); renderAlarmList();
 }
 
 function renderAlarmList() {
   var listContainer = document.getElementById('alarmList');
   if (alarms.length === 0) {
-    listContainer.innerHTML = '<div style="color:#64748b; font-size:9pt; text-align:center; padding:12px;">尚無鬧鐘，請於上方新增。</div>';
+    listContainer.innerHTML = '<div style="color:#64748b; font-size:9pt; text-align:center; padding:10px;">尚無鬧鐘，請於上方新增。</div>';
     return;
   }
 
-  var soundNames = {
-    'shuaka': '刷卡',
-    'sunrise': '和弦',
-    'beep': '急促',
-    'chime': '鐘聲',
-    'siren': '警報'
-  };
-
-  var timingNames = {
-    0: '當天',
-    1: '前一天'
-  };
+  var soundNames = { 'shuaka': '刷卡', 'sunrise': '和弦', 'beep': '急促', 'chime': '鐘聲', 'siren': '警報' };
+  var timingNames = { 0: '當天', 1: '前一天' };
 
   var html = '';
   alarms.forEach(a => {
-    var soundText = soundNames[a.sound] || '刷卡';
-    var timingText = timingNames[a.timing] !== undefined ? timingNames[a.timing] : '當天';
     html += '<div class="alarm-item">' +
               '<div class="alarm-item-header">' +
                 '<div>' +
                   '<span class="alarm-time">' + a.time + '</span>' +
                   '<span class="alarm-title" style="margin-left:6px;">' + a.title + '</span>' +
-                  '<span style="font-size:7.5pt; color:#64748b; margin-left:4px;">[' + timingText + ' | ' + soundText + ']</span>' +
+                  '<span style="font-size:7.5pt; color:#64748b; margin-left:4px;">[' + (timingNames[a.timing] || '當天') + ' | ' + (soundNames[a.sound] || '刷卡') + ']</span>' +
                 '</div>' +
-                  '<div style="display:flex; align-items:center; gap:8px;">' +
-                  '<label class="switch">' +
-                    '<input type="checkbox" ' + (a.enabled ? 'checked' : '') + ' onchange="toggleAlarm(' + a.id + ')">' +
-                    '<span class="slider"></span>' +
-                  '</label>' +
-                  '<button style="color:#ef4444; border:none; background:transparent; font-weight:bold; font-size:11pt; padding:0 4px;" onclick="deleteAlarm(' + a.id + ')">✕</button>' +
+                '<div style="display:flex; align-items:center; gap:6px;">' +
+                  '<label class="switch"><input type="checkbox" ' + (a.enabled ? 'checked' : '') + ' onchange="toggleAlarm(' + a.id + ')"><span class="slider"></span></label>' +
+                  '<button style="color:#ef4444; border:none; background:transparent; font-weight:bold; font-size:10pt;" onclick="deleteAlarm(' + a.id + ')">✕</button>' +
                 '</div>' +
               '</div>' +
-              '<div>' +
-                '<span class="alarm-shifts-badge">' + a.shifts.join(', ') + '</span>' +
-              '</div>' +
+              '<div><span class="alarm-shifts-badge">' + a.shifts.join(', ') + '</span></div>' +
             '</div>';
   });
   listContainer.innerHTML = html;
 }
-
-window.onresize = function() {
-  updateCalendar();
-};
 
 window.onload = function() {
   var badgeMonthEl = document.getElementById("navBadgeMonth");
@@ -1923,8 +1516,7 @@ window.onload = function() {
   }
 
   var tbody = document.getElementById("calBody");
-  var html = "";
-  var cellIdx = 0;
+  var html = ""; var cellIdx = 0;
   for(var r=0; r<6; r++) {
     html += '<tr id="rowGrid' + r + '">';
     for(var c=0; c<7; c++) {
@@ -1944,13 +1536,11 @@ window.onload = function() {
   sySelect.options.length = 0; smSelect.options.length = 0;
 
   for(var i=2011; i<2100; i++) {
-     var opt = document.createElement("option");
-     opt.value = i; opt.text = (i - 1911) + " 年";
+     var opt = document.createElement("option"); opt.value = i; opt.text = (i - 1911) + " 年";
      sySelect.appendChild(opt);
   }
   for(var j=0; j<12; j++) {
-     var opt = document.createElement("option");
-     opt.value = j; opt.text = (j + 1) + " 月";
+     var opt = document.createElement("option"); opt.value = j; opt.text = (j + 1) + " 月";
      smSelect.appendChild(opt);
   }
 
@@ -1960,32 +1550,21 @@ window.onload = function() {
   updateCalendar();
   initSwipeGesture();
   
-  initLocalNotifications();
-  syncLocalNotifications();
+  syncNativeAlarms();
   checkPendingAlarmTrigger();
-  
   unlockAudioEngine();
-  loadBase64AudioBuffer();
 
   if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
     window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
       if (state.isActive) {
         unlockAudioEngine();
-        loadBase64AudioBuffer();
         checkPendingAlarmTrigger();
       }
     });
   }
   
-  document.body.addEventListener('touchstart', function() {
-    unlockAudioEngine();
-    loadBase64AudioBuffer();
-  }, { once: true });
-  
-  document.body.addEventListener('click', function() {
-    unlockAudioEngine();
-    loadBase64AudioBuffer();
-  }, { once: true });
+  document.body.addEventListener('touchstart', unlockAudioEngine, { once: true });
+  document.body.addEventListener('click', unlockAudioEngine, { once: true });
   
   setInterval(checkAlarmsRealtime, 1000);
 };
