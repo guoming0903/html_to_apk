@@ -16,10 +16,12 @@ public class AlarmAlertActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // 關鍵修正：強制在背景、鎖屏狀態下喚醒螢幕並顯示在最上層
         getWindow().addFlags(
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
             WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
         );
 
         LinearLayout layout = new LinearLayout(this);
@@ -63,12 +65,12 @@ public class AlarmAlertActivity extends Activity {
         layout.addView(stopButton);
 
         setContentView(layout);
-        playShuakaVoice();
+        playAlarmSound();
     }
 
-    private void playShuakaVoice() {
+    private void playAlarmSound() {
         try {
-            // 直接從 res/raw/shuaka.mp3 建立 MediaPlayer
+            // 嘗試播放專案中的語音檔，若無則改用系統預設鬧鐘音效避免當機
             mediaPlayer = MediaPlayer.create(this, R.raw.shuaka);
             if (mediaPlayer != null) {
                 mediaPlayer.setLooping(true);
@@ -95,18 +97,24 @@ public class AlarmAlertActivity extends Activity {
     }
 
     private void stopAlarmAndExit() {
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
+        try {
+            if (mediaPlayer != null) {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.release();
+                mediaPlayer = null;
             }
-            mediaPlayer.release();
-            mediaPlayer = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            finish();
         }
-        finish();
     }
 
     @Override
     public void onBackPressed() {
         stopAlarmAndExit();
+        super.onBackPressed();
     }
 }

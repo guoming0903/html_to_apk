@@ -25,7 +25,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         alertIntent.putExtra("alarm_title", title);
         alertIntent.putExtra("shift_name", shiftName);
         alertIntent.putExtra("alarm_sound", sound);
-        alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        // 關鍵：必須加上 NEW_TASK 與 CLEAR_TOP，允許背景觸發
+        alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | 
+                             Intent.FLAG_ACTIVITY_CLEAR_TOP | 
+                             Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                             
         context.startActivity(alertIntent);
     }
 }
